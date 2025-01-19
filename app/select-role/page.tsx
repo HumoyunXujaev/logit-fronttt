@@ -12,7 +12,6 @@ import {
   TrendingUp,
   ArrowLeft,
 } from 'lucide-react';
-
 export default function UserRoleSelection() {
   const searchParams = useSearchParams();
   const [userType, setUserType] = useState('');
@@ -37,7 +36,7 @@ export default function UserRoleSelection() {
           </Link>
 
           <Link
-            href='/start-mini'
+            href='/carrier-welcome'
             className='bg-blue-500 hover:bg-blue-600 text-white text-center py-3 px-2 rounded-lg text-sm font-semibold transition duration-300 flex flex-col items-center justify-center'
           >
             <Truck size={24} className='mb-1' />
