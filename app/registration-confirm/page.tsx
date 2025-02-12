@@ -5,18 +5,56 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import AuthService from '@/lib/auth';
+import { useUser } from '@/contexts/UserContext';
 
 const RegistrationCompletionPage: React.FC = () => {
   const [stage, setStage] = useState<'contact-info' | 'confirmation'>(
     'contact-info'
   );
+  const { userState } = useUser();
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [telegram, setTelegram] = useState('');
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      // if (window.Telegram?.WebApp) {
+      const webApp = window?.Telegram?.WebApp;
+
+      // Отправляем регистрацию с полными данными
+      const result = await AuthService.registerUser({
+        telegramData: webApp,
+        userData: {
+          type: userState.type,
+          role: userState.role,
+          preferred_language: userState.language,
+          phone_number: phone,
+          whatsapp_number: whatsapp,
+        },
+      });
+
+      console.log(result, 'result');
+      // }
+      // await setUserData({
+      //   result,
+
+      //   // role: userState.role,
+      // });
+      // await setUserRole(userState.role);
+      // await setUserType(userState.type);
+      // await setLanguage(userState.language);
+      // await setUserType({ type: userState.type })
+
+      // toast.success('Регистрация успешно завершена');
+
+      // router.push('/menu');
+    } catch (error) {
+      // toast.error('Ошибка при регистрации. Пожалуйста, попробуйте снова.');
+      console.error('Registration error:', error);
+    }
     // Здесь должна быть логика отправки данных на сервер
     setStage('confirmation');
   };

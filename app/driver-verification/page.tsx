@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FileUpload } from '@/components/FileUpload';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,9 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { AuthService } from '@/lib/auth';
+import { toast } from 'sonner';
+
 type VerificationStage = 'initial' | 'uploading' | 'verifying' | 'result';
 
 interface VerificationResult {
@@ -19,50 +22,64 @@ interface VerificationResult {
   message: string;
 }
 
+interface Document {
+  id: string;
+  type: string;
+  url: string;
+}
+
 const DriverVerificationPage: React.FC = () => {
   const router = useRouter();
   const [stage, setStage] = useState<VerificationStage>('initial');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [frontImage, setFrontImage] = useState<string | null>(null);
-  const [backImage, setBackImage] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [verificationResult, setVerificationResult] =
     useState<VerificationResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    side: 'front' | 'back'
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          if (side === 'front') {
-            setFrontImage(reader.result);
-          } else {
-            setBackImage(reader.result);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // const handleDocumentUpload = async (documentData: any, type: string) => {
+  //   try {
+  //     const response = await AuthService.uploadDocument(
+  //       documentData.file,
+  //       type
+  //     );
+  //     setDocuments((prev) => [...prev, response]);
+  //     toast.success('Документ успешно загружен');
+  //   } catch (error) {
+  //     toast.error('Ошибка при загрузке документа');
+  //     console.error('Document upload error:', error);
+  //   }
+  // };
 
   const handleVerification = async () => {
+    if (documents.length < 2) {
+      toast.error('Необходимо загрузить обе стороны водительских прав');
+      return;
+    }
+
     setStage('verifying');
     setIsModalOpen(false);
+    setIsLoading(true);
 
-    // Имитация процесса проверки
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Имитация процесса проверки
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    const isApproved = Math.random() > 0.1;
-    setVerificationResult({
-      isApproved,
-      message: isApproved
-        ? 'Ваша категория водительского права соответствует нашим требованиям. Теперь можете пройти идентификацию через платформу MyID.'
-        : "К сожалению, ваша категория водительского права не соответствует нашим требованиям.\n Чтобы получить разрешение на прохождение идентификации, категория водительских прав должна быть как минимум 'C'. ",
-    });
-    setStage('result');
+      const isApproved = Math.random() > 0.1;
+      setVerificationResult({
+        isApproved,
+        message: isApproved
+          ? 'Ваша категория водительского права соответствует нашим требованиям. Теперь можете пройти идентификацию через платформу MyID.'
+          : "К сожалению, ваша категория водительского права не соответствует нашим требованиям.\n Чтобы получить разрешение на прохождение идентификации, категория водительских прав должна быть как минимум 'C'. ",
+      });
+      setStage('result');
+    } catch (error) {
+      toast.error('Ошибка при проверке документов');
+      console.error('Verification error:', error);
+      setStage('initial');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const pageVariants = {
@@ -175,44 +192,43 @@ const DriverVerificationPage: React.FC = () => {
               <label className='block text-sm font-medium mb-2 text-gray-700'>
                 Передняя сторона
               </label>
-              <Input
-                type='file'
-                onChange={(e) => handleImageUpload(e, 'front')}
-                accept='image/*'
-                className='file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
-              />
-              {frontImage && (
-                <img
-                  src={frontImage}
-                  alt='Front'
-                  className='mt-2 max-h-40 mx-auto rounded-lg shadow'
-                />
-              )}
+              {/* <FileUpload
+                type='driver_license_front'
+                onUpload={(data) =>
+                  handleDocumentUpload(data, 'driver_license_front')
+                }
+                allowedTypes={['image/jpeg', 'image/png']}
+                maxSize={5 * 1024 * 1024}
+                label='Загрузить переднюю сторону'
+              /> */}
             </div>
             <div>
               <label className='block text-sm font-medium mb-2 text-gray-700'>
                 Задняя сторона
               </label>
-              <Input
-                type='file'
-                onChange={(e) => handleImageUpload(e, 'back')}
-                accept='image/*'
-                className='file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
-              />
-              {backImage && (
-                <img
-                  src={backImage}
-                  alt='Back'
-                  className='mt-2 max-h-40 mx-auto rounded-lg shadow'
-                />
-              )}
+              {/* <FileUpload
+                type='driver_license_back'
+                onUpload={(data) =>
+                  handleDocumentUpload(data, 'driver_license_back')
+                }
+                allowedTypes={['image/jpeg', 'image/png']}
+                maxSize={5 * 1024 * 1024}
+                label='Загрузить заднюю сторону'
+              /> */}
             </div>
             <Button
               onClick={handleVerification}
-              disabled={!frontImage || !backImage}
+              disabled={documents.length < 2 || isLoading}
               className='w-full bg-blue-500 hover:bg-blue-600 text-white'
             >
-              Отправить на проверку
+              {isLoading ? (
+                <>
+                  <Loader2 className='animate-spin h-4 w-4 mr-2' />
+                  Проверка...
+                </>
+              ) : (
+                'Отправить на проверку'
+              )}
             </Button>
           </div>
         </DialogContent>

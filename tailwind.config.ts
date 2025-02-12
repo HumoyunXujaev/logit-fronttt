@@ -1,40 +1,47 @@
+// tailwind.config.ts
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-	content: [
-		"./pages/**/*.{js,ts,jsx,tsx,mdx}",
-		"./components/**/*.{js,ts,jsx,tsx,mdx}",
-		"./app/**/*.{js,ts,jsx,tsx,mdx}",
-	  ],
+  darkMode: 'class',
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
   theme: {
     extend: {
       colors: {
+        background: {
+          DEFAULT: 'var(--background)',
+          secondary: 'var(--background-secondary)',
+        },
+        foreground: {
+          DEFAULT: 'var(--foreground)',
+          secondary: 'var(--foreground-secondary)',
+        },
         primary: {
-          DEFAULT: '#0066FF',
-          50: '#E5F0FF',
-          100: '#CCE0FF',
-          200: '#99C2FF',
-          300: '#66A3FF',
-          400: '#3385FF',
-          500: '#0066FF',
-          600: '#0052CC',
-          700: '#003D99',
-          800: '#002966',
-          900: '#001433',
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
         },
         secondary: {
-          DEFAULT: '#FF6B00',
-          50: '#FFF0E5',
-          100: '#FFE0CC',
-          200: '#FFC299',
-          300: '#FFA366',
-          400: '#FF8533',
-          500: '#FF6B00',
-          600: '#CC5500',
-          700: '#994000',
-          800: '#662A00',
-          900: '#331500',
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
         },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
+        },
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',

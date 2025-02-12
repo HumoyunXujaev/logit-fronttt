@@ -1,24 +1,43 @@
-// File: app/layout.tsx
-import './globals.css'
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+'use client';
 
-const inter = Inter({ subsets: ['latin'] })
+import './globals.css';
+import { Inter } from 'next/font/google';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AppProvider } from '@/contexts/AppContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { LoadingProvider } from '@/components/LoadingProvider';
+import { ToastProvider } from '@/components/ToastProvider';
+import Script from 'next/script';
+import { UserProvider } from '@/contexts/UserContext';
 
-export const metadata: Metadata = {
-  title: 'Logit Smartbot Business',
-  description: 'Unique platform for international logistics',
-}
-
+const inter = Inter({ subsets: ['latin'] });
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang='en' suppressHydrationWarning>
+      <head>
+        <Script
+          src='https://telegram.org/js/telegram-web-app.js'
+          strategy='beforeInteractive'
+        />
+      </head>
+      <body className={inter.className}>
+        <ErrorBoundary>
+          <AppProvider>
+            <UserProvider>
+              {/* <ThemeProvider> */}
+              <LoadingProvider>
+                <ToastProvider />
+                {children}
+              </LoadingProvider>
+            </UserProvider>
+            {/* </ThemeProvider> */}
+          </AppProvider>
+        </ErrorBoundary>
+      </body>
     </html>
-  )
+  );
 }
-

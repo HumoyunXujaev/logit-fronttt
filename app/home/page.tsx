@@ -33,6 +33,11 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import NavigationMenu from '../components/NavigationMenu';
+import { useUser } from '@/contexts/UserContext';
+import { useRouter } from 'next/navigation';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useApp } from '@/contexts/AppContext';
 
 type UserRole = 'carrier' | 'other';
 
@@ -149,7 +154,7 @@ const mockOrders: Order[] = [
     loadingType: 'Задняя',
     unloadingType: 'Задняя',
     additionalRequirements: 'Требуются сертификаты соответствия материалов',
-  }
+  },
   // Добавьте больше заказов с дополнительными полями
 ];
 
@@ -160,6 +165,7 @@ const cargoCategories = [
   'Техника',
   'Стройматериалы',
 ];
+
 const cities = [
   'Ташкент',
   'Москва',
@@ -170,7 +176,7 @@ const cities = [
 ];
 
 const RoleConfirmationDialog: React.FC<{
-  onConfirm: (role: UserRole) => void;
+  onConfirm: (role: 'carrier' | 'other') => void;
 }> = ({ onConfirm }) => {
   return (
     <Dialog open={true}>
@@ -229,7 +235,9 @@ const FilterModal: React.FC<{
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='bg-blue-600 text-white'>
         <DialogHeader>
-          <DialogTitle className='text-white text-center'>Поиск грузов</DialogTitle>
+          <DialogTitle className='text-white text-center'>
+            Поиск грузов
+          </DialogTitle>
         </DialogHeader>
         <div className='space-y-4 max-w-[100vw] overflow-y-auto'>
           <Select
@@ -310,15 +318,40 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [showNotificationDialog, setShowNotificationDialog] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
-  useEffect(() => {
-    const savedRole = localStorage.getItem('userRole') as UserRole | null;
-    if (savedRole) {
-      setUserRole(savedRole);
-    }
+  const { userState, setUserRole } = useUser();
+  // const router = useRouter();
 
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+
+  // const { userState } = useUser();
+  const router = useRouter();
+  const {
+    addNotification,
+    addToFavorites,
+    removeFromFavorites,
+    isFavorite,
+    notifications,
+    favorites,
+  } = useApp();
+  // const { addNotification } = useNotifications();
+  // const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    // if (!userState.isAuthenticated && !userState.role) {
+    //   router.push('/select-lang');
+    // }
+
+    // const savedRole = localStorage.getItem('userRole') as UserRole | null;
+    // if (savedRole) {
+    //   setUserRole(savedRole);
+    // }
+
+    setOrders(mockOrders);
     const handleBeforeUnload = () => {
       localStorage.clear();
     };
@@ -328,11 +361,18 @@ export default function OrdersPage() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, []);
+  }, [
+    userState,
+    router,
+    addNotification,
+    addToFavorites,
+    removeFromFavorites,
+    isFavorite,
+    orders,
+  ]);
 
-  const handleRoleConfirm = (role: UserRole) => {
-    setUserRole(role);
-    localStorage.setItem('userRole', role);
+  const handleRoleConfirm = (role: 'carrier' | 'other') => {
+    setUserRole(role === 'carrier' ? 'carrier' : 'cargo-owner');
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -343,6 +383,55 @@ export default function OrdersPage() {
   const handleApplyFilters = (filters: FilterState) => {
     console.log('Applied filters:', filters);
     // Здесь должна быть логика применения фильтров к заказам
+  };
+
+  const handleNotificationToggle = (order: Order) => {
+    if (
+      notifications.some(
+        (notification) =>
+          notification.orderId === order.id && !notification.isRead
+      )
+    ) {
+      setErrorMessage('Для этого груза уже включены нотификации');
+      setShowErrorDialog(true);
+    } else {
+      setCurrentOrder(order);
+      setShowNotificationDialog(true);
+    }
+  };
+
+  const handleEnableNotification = () => {
+    if (currentOrder) {
+      addNotification({
+        orderId: currentOrder.id,
+        type: 'cargo',
+        message: `Включены уведомления для груза: ${currentOrder.cargo} (${currentOrder.from} - ${currentOrder.to})`,
+      });
+      setShowNotificationDialog(false);
+    }
+  };
+
+  const handleFavoriteToggle = (order: Order) => {
+    // const favoriteId = `cargo-${order.id}`;
+    if (isFavorite(order.id)) {
+      setErrorMessage('Этот груз уже находится в избранном');
+      setShowErrorDialog(true);
+    } else {
+      addToFavorites({
+        orderId: order.id,
+        type: order.cargo,
+        title: `${order.cargo}: ${order.from} - ${order.to}`,
+        description: order.description,
+        details: {
+          Вес: `${order.weight} т`,
+          Габариты: order.dimensions,
+          'Тип погрузки': order.loadingType,
+          'Тип разгрузки': order.unloadingType,
+          Оплата: order.payment,
+          Цена: order.price,
+        },
+      });
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -362,7 +451,7 @@ export default function OrdersPage() {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
-  if (userRole === null) {
+  if (!userState.role && !userState.isAuthenticated) {
     return <RoleConfirmationDialog onConfirm={handleRoleConfirm} />;
   }
 
@@ -474,13 +563,35 @@ export default function OrdersPage() {
                   variant='outline'
                   size='sm'
                   className='flex-1 ml-1 mr-1'
-                  onClick={() => setShowNotificationDialog(true)}
+                  onClick={() => handleNotificationToggle(order)}
                 >
                   <Bell className='h-4 w-4 mr-1' />
                 </Button>
-                <Button variant='outline' size='sm' className='flex-1'>
+
+                {/* <Button
+                  variant='outline'
+                  size='sm'
+                  className='flex-1 ml-1 mr-1'
+                  onClick={() => setShowNotificationDialog(true)}
+                >
+                  <Bell className='h-4 w-4 mr-1' />
+                </Button> */}
+
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className={`flex-1 ${
+                    isFavorite(order.id)
+                      ? 'text-red-500 hover:text-red-600'
+                      : ''
+                  }`}
+                  onClick={() => handleFavoriteToggle(order)}
+                >
                   <Heart className='h-4 w-4 mr-1' />
                 </Button>
+                {/* <Button variant='outline' size='sm' className='flex-1'>
+                  <Heart className='h-4 w-4 mr-1' />
+                </Button> */}
               </div>
             </CardContent>
           </Card>
@@ -488,6 +599,30 @@ export default function OrdersPage() {
       </div>
 
       <Dialog
+        open={showNotificationDialog}
+        onOpenChange={setShowNotificationDialog}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Включить уведомления?</DialogTitle>
+          </DialogHeader>
+          <p>
+            Вы будете получать уведомления о новых предложениях по этому
+            направлению и типу груза.
+          </p>
+          <div className='flex justify-end space-x-2 mt-4'>
+            <Button
+              variant='outline'
+              onClick={() => setShowNotificationDialog(false)}
+            >
+              Отмена
+            </Button>
+            <Button onClick={handleEnableNotification}>Включить</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* <Dialog
         open={showNotificationDialog}
         onOpenChange={setShowNotificationDialog}
       >
@@ -515,9 +650,31 @@ export default function OrdersPage() {
             </Button>
           </div>
         </DialogContent>
+      </Dialog> */}
+
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Внимание</DialogTitle>
+          </DialogHeader>
+          <p>{errorMessage}</p>
+          <div className='flex justify-end space-x-2 mt-4'>
+            <Button onClick={() => setShowErrorDialog(false)}>Понятно</Button>
+          </div>
+        </DialogContent>
       </Dialog>
 
-      <NavigationMenu userRole={userRole} />
+      <NavigationMenu
+        userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
+      />
     </div>
   );
+
+  //     <NavigationMenu
+  //       userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
+  //     />
+
+  //     {/* <NavigationMenu userRole={userRole} /> */}
+  //   </div>
+  // );
 }
