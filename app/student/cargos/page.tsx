@@ -30,6 +30,8 @@ import NavigationMenu from '@/app/components/NavigationMenu';
 import { useUser } from '@/contexts/UserContext';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { string } from 'three/src/nodes/TSL.js';
+import Link from 'next/link';
 
 interface CargoResponse {
   results: Cargo[];
@@ -48,6 +50,7 @@ interface Cargo {
     role: string;
     company_name?: string;
     full_name: string;
+    telegram_id: any;
   };
   weight: number;
   volume?: number;
@@ -81,6 +84,8 @@ interface CarrierRequest {
 }
 
 export default function StudentCargosPage() {
+  const [iscarrier, setiscarrier] = useState(false);
+
   const [cargos, setCargos] = useState<CargoResponse>({ results: [] });
   const [matchingRequests, setMatchingRequests] = useState<CarrierRequest[]>(
     []
@@ -99,11 +104,15 @@ export default function StudentCargosPage() {
     loading_point: '',
     unloading_point: '',
   });
+  const [mycargos, setmycargos] = useState<string[] | null>(null);
 
   const { userState } = useUser();
 
   useEffect(() => {
     fetchCargos();
+    if (userState.role !== 'student') {
+      setiscarrier(true);
+    }
   }, []);
 
   const fetchCargos = async () => {
@@ -118,7 +127,20 @@ export default function StudentCargosPage() {
         },
       });
       setCargos(response);
-      console.log(response, 'res');
+      if (typeof window !== 'undefined') {
+        const id = localStorage.getItem('telegram_id');
+        if (id && cargos) {
+          const resalllt = await response.results.filter(
+            (res: any) => res.owner?.telegram_id === id
+          );
+          console.log(resalllt, 'resaalt');
+          setmycargos(resalllt.map((c: any) => c.id));
+          console.log(mycargos, 'mycargos');
+          console.log(id, 'id');
+          console.log(cargos, 'cargos');
+          console.log(response, 'res');
+        }
+      }
     } catch (error) {
       toast.error('Ошибка при загрузке грузов');
       console.error('Fetch cargos error:', error);
@@ -188,6 +210,10 @@ export default function StudentCargosPage() {
               : {cargo.owner.company_name || cargo.owner.full_name}
             </p>
           </div>
+
+          {mycargos?.includes(cargo.id) && <Badge>ЭТО ВАШ ГРУЗ</Badge>}
+
+          <Badge>{cargo.status}</Badge>
           <Badge>Новый</Badge>
         </div>
 
@@ -216,6 +242,7 @@ export default function StudentCargosPage() {
     </Card>
   );
 
+  console.log(selectedCargo, 'selectedcargo');
   const renderCargoDetails = () => {
     if (!selectedCargo) return null;
 
@@ -256,11 +283,14 @@ export default function StudentCargosPage() {
               {selectedCargo.price && <p>Цена: {selectedCargo.price} ₽</p>}
             </div>
 
-            <div className='flex justify-end space-x-2 mt-4'>
-              <Button onClick={() => setShowMatchingRequests(true)}>
-                Найти перевозчика
-              </Button>
-            </div>
+            {(selectedCargo.status === 'pending' ||
+              selectedCargo.status === 'manager_approved') && (
+              <div className='flex justify-end space-x-2 mt-4'>
+                <Button onClick={() => setShowMatchingRequests(true)}>
+                  Найти перевозчика
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -288,7 +318,7 @@ export default function StudentCargosPage() {
                 <div>
                   <h3 className='font-semibold mb-2'>Подходящие заявки</h3>
                   <div className='space-y-2'>
-                    {matchingRequests?.map((request) => (
+                    {matchingRequests?.map((request: any) => (
                       <Card key={request.id}>
                         <CardContent className='p-4'>
                           <div className='flex justify-between items-start'>
@@ -375,6 +405,16 @@ export default function StudentCargosPage() {
     return (
       <div className='flex justify-center items-center min-h-screen'>
         <Loader2 className='h-8 w-8 animate-spin' />
+      </div>
+    );
+  }
+
+  if (iscarrier === true) {
+    return (
+      <div className='min-h-screen bg-gray-100 p-4 flex items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-blue-600' /> You don't
+        have enough permissions to access this page
+        <Link href={'/'}>go to home page</Link>
       </div>
     );
   }

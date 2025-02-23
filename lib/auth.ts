@@ -45,6 +45,7 @@ export class AuthService {
     const { access, refresh, user } = response.data;
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
+    localStorage.setItem('telegram_id', user?.telegram_id);
     return response.data;
   }
 

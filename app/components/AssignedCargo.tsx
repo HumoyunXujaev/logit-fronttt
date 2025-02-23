@@ -114,6 +114,11 @@ export default function AssignedCargosSection() {
     return null;
   }
 
+  const assignedddCargos = assignedCargos.results.filter(
+    (c) => c.status !== 'pending'
+  );
+  console.log(assignedddCargos, 'tttt');
+
   return (
     <div className='mb-8'>
       <h2 className='text-xl font-semibold text-white mb-4'>
@@ -121,68 +126,76 @@ export default function AssignedCargosSection() {
       </h2>
       <div className='space-y-4'>
         {assignedCargos?.results?.map((cargo) => (
-          <Card key={cargo.id} className='bg-white'>
-            <CardContent className='p-4'>
-              <div className='flex justify-between items-start mb-4'>
-                <div>
-                  <h3 className='font-bold text-lg'>{cargo.title}</h3>
-                  <p className='text-sm text-gray-600'>
-                    От: {cargo.owner.company_name || cargo.owner.full_name}
-                  </p>
-                  <p className='text-sm text-gray-600'>
-                    Назначен: {cargo.assigned_by.full_name}
-                  </p>
-                </div>
-                <Badge variant='secondary'>
-                  {cargo.status === 'assigned'
-                    ? 'Требует подтверждения'
-                    : cargo.status}
-                </Badge>
-              </div>
+          <>
+            {cargo.status !== 'pending' && (
+              <Card key={cargo?.id} className='bg-white'>
+                <CardContent className='p-4'>
+                  <div className='flex justify-between items-start mb-4'>
+                    <div>
+                      <h3 className='font-bold text-lg'>{cargo?.title}</h3>
+                      <p className='text-sm text-gray-600'>
+                        От:{' '}
+                        {cargo?.owner?.company_name || cargo?.owner?.full_name}
+                      </p>
+                      <p className='text-sm text-gray-600'>
+                        Назначен: {cargo?.assigned_by?.full_name}
+                      </p>
+                    </div>
+                    <Badge variant='secondary'>
+                      {cargo?.status === 'assigned'
+                        ? 'Требует подтверждения'
+                        : cargo?.status}
+                    </Badge>
+                  </div>
 
-              <div className='grid grid-cols-2 gap-2 mb-4 text-sm'>
-                <div>
-                  <span className='font-medium'>Маршрут:</span>
-                  <p>
-                    {cargo.loading_point} → {cargo.unloading_point}
-                  </p>
-                </div>
-                <div>
-                  <span className='font-medium'>Дата загрузки:</span>
-                  <p>{new Date(cargo.loading_date).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <span className='font-medium'>Груз:</span>
-                  <p>
-                    {cargo.weight} т{cargo.volume && `, ${cargo.volume} м³`}
-                  </p>
-                </div>
-                <div>
-                  <span className='font-medium'>Оплата:</span>
-                  <p>
-                    {cargo.payment_method}
-                    {cargo.price && ` (${cargo.price} ₽)`}
-                  </p>
-                </div>
-              </div>
+                  <div className='grid grid-cols-2 gap-2 mb-4 text-sm'>
+                    <div>
+                      <span className='font-medium'>Маршрут:</span>
+                      <p>
+                        {cargo?.loading_point} → {cargo?.unloading_point}
+                      </p>
+                    </div>
+                    <div>
+                      <span className='font-medium'>Дата загрузки:</span>
+                      <p>
+                        {new Date(cargo?.loading_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <span className='font-medium'>Груз:</span>
+                      <p>
+                        {cargo?.weight} т
+                        {cargo?.volume && `, ${cargo.volume} м³`}
+                      </p>
+                    </div>
+                    <div>
+                      <span className='font-medium'>Оплата:</span>
+                      <p>
+                        {cargo?.payment_method}
+                        {cargo?.price && ` (${cargo?.price} ₽)`}
+                      </p>
+                    </div>
+                  </div>
 
-              {cargo.status === 'assigned' && (
-                <div className='flex justify-end space-x-2'>
-                  <Button
-                    variant='outline'
-                    onClick={() => handleAction(cargo, 'reject')}
-                  >
-                    <XCircle className='h-4 w-4 mr-2' />
-                    Отклонить
-                  </Button>
-                  <Button onClick={() => handleAction(cargo, 'accept')}>
-                    <CheckCircle className='h-4 w-4 mr-2' />
-                    Принять
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  {cargo?.status === 'assigned' && (
+                    <div className='flex justify-end space-x-2'>
+                      <Button
+                        variant='outline'
+                        onClick={() => handleAction(cargo, 'reject')}
+                      >
+                        <XCircle className='h-4 w-4 mr-2' />
+                        Отклонить
+                      </Button>
+                      <Button onClick={() => handleAction(cargo, 'accept')}>
+                        <CheckCircle className='h-4 w-4 mr-2' />
+                        Принять
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </>
         ))}
       </div>
 
@@ -204,10 +217,10 @@ export default function AssignedCargosSection() {
             </div>
             {selectedCargo && (
               <div className='mt-4 p-4 bg-gray-50 rounded-lg'>
-                <p className='font-medium'>{selectedCargo.title}</p>
+                <p className='font-medium'>{selectedCargo?.title}</p>
                 <p className='text-sm text-gray-600'>
-                  {selectedCargo.loading_point} →{' '}
-                  {selectedCargo.unloading_point}
+                  {selectedCargo?.loading_point} →{' '}
+                  {selectedCargo?.unloading_point}
                 </p>
               </div>
             )}

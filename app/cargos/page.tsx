@@ -636,13 +636,13 @@ import {
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   X,
   Plus,
   TruckIcon,
   MapPinIcon,
+  BoxIcon,
   CalendarIcon,
   CreditCardIcon,
   BellIcon,
@@ -654,7 +654,6 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import Link from 'next/link';
 
 interface CargoFormData {
   title: string;
@@ -1377,7 +1376,20 @@ export default function CargoPage() {
         </DialogContent>
       </Dialog>
 
-      <Link href={'/student/cargos/'}>go to cargos nigga</Link>
+      {userState.role === 'student' && (
+        <div className='space-y-4 mb-8'>
+          <Button
+            onClick={() => {
+              router.push('/student/cargos/');
+            }}
+            className='w-full bg-blue-600 hover:bg-blue-700 text-white'
+          >
+            <BoxIcon className='mr-2 h-4 w-4' /> Смотреть все
+          </Button>
+        </div>
+      )}
+
+      {/* <Link href={'/student/cargos/'}>go to cargos nigga</Link> */}
       <NavigationMenu
         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
       />

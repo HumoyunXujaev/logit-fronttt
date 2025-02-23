@@ -90,7 +90,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             if (userExists) {
               // Если пользователь существует, перенаправляем на home
               console.log('user exists');
-              webApp.requestFullscreen();
+              // webApp.requestFullscreen();
               router.push('/menu');
             } else {
               // Если пользователь не существует, начинаем процесс регистрации
