@@ -614,10 +614,9 @@
 //   );
 // }
 
-// app/cargos/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -634,6 +633,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -645,7 +654,8 @@ import {
   BoxIcon,
   CalendarIcon,
   CreditCardIcon,
-  BellIcon,
+  Check,
+  ChevronsUpDown,
   AlertCircle,
   Loader2,
 } from 'lucide-react';
@@ -654,6 +664,30 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+// Type definitions for location data
+interface Location {
+  id: number;
+  name: string;
+  level: number; // 1 = Country, 2 = Region/State, 3 = City
+  parent_name?: string;
+  country_name?: string;
+  full_name?: string;
+}
 
 interface CargoFormData {
   title: string;
@@ -665,7 +699,13 @@ interface CargoFormData {
   height?: number;
   loading_point: string;
   unloading_point: string;
-  additional_points?: { point: string; type: 'loading' | 'unloading' }[];
+  loading_location?: number;
+  unloading_location?: number;
+  additional_points?: {
+    point: string;
+    type: 'loading' | 'unloading';
+    location_id?: number;
+  }[];
   loading_date: string;
   is_constant: boolean;
   is_ready: boolean;
@@ -692,6 +732,9 @@ const initialFormData: CargoFormData = {
   vehicle_type: '',
   loading_type: '',
   payment_method: '',
+  loading_location: undefined,
+  unloading_location: undefined,
+  additional_points: [],
 };
 
 const vehicleTypes = [
@@ -734,7 +777,20 @@ export default function CargoPage() {
   const [isAllFilled, setIsAllFilled] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // const [cargoCount, setCargoCount] = useState<number>(0);
+  // const [loadingLocations, setLoadingLocations] = useState<Location[]>([]);
+  // const [unloadingLocations, setUnloadingLocations] = useState<Location[]>([]);
+  // const [isLoadingLocations, setIsLoadingLocations] = useState<boolean>(false);
+  // const [isUnloadingLocations, setIsUnloadingLocations] =
+  //   useState<boolean>(false);
+  // const [loadingLocationOpen, setLoadingLocationOpen] = useState(false);
+  // const [unloadingLocationOpen, setUnloadingLocationOpen] = useState(false);
+  // const [loadingOpen, setLoadingOpen] = useState(false);
+  // const [unloadingOpen, setUnloadingOpen] = useState(false);
+  // const [open, setOpen] = useState(false);
+  // const [searchQuery, setSearchQuery] = useState('');
+  // const [locations, setLocations] = useState<Location[]>([]);
+  // const [isLoading, setIsLoading] = useState(false);
+  // const inputRef = useRef<HTMLInputElement>(null);
 
   const { userState } = useUser();
   const router = useRouter();
@@ -795,6 +851,34 @@ export default function CargoPage() {
     });
   };
 
+  const searchLocations = async (
+    query: string,
+    setLocations: React.Dispatch<React.SetStateAction<Location[]>>,
+    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    if (!query || query.length < 2) {
+      setLocations([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Call your API to search locations
+      const response = await api.searchLocations(query);
+      if (Array.isArray(response)) {
+        setLocations(response);
+      } else {
+        setLocations([]);
+      }
+      console.log(response, 'fdfdgdf');
+    } catch (error) {
+      console.error('Error searching locations:', error);
+      toast.error('Ошибка при поиске местоположения');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handlePaymentDetailsChange = (field: string, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -804,7 +888,6 @@ export default function CargoPage() {
       },
     }));
   };
-
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
@@ -815,7 +898,23 @@ export default function CargoPage() {
         return;
       }
 
-      const response = await api.createCargo(formData);
+      // Prepare the data for API submission
+      const submissionData = {
+        ...formData,
+        loading_location: formData.loading_location
+          ? Number(formData.loading_location)
+          : null,
+        unloading_location: formData.unloading_location
+          ? Number(formData.unloading_location)
+          : null,
+      };
+      console.log('Submitting cargo with locations:', {
+        loading_location: submissionData.loading_location,
+        unloading_location: submissionData.unloading_location,
+      });
+      console.log(submissionData, 'submitdata');
+
+      const response = await api.createCargo(submissionData);
       toast.success('Груз успешно создан');
       setIsAddingCargo(false);
       setFormData(initialFormData);
@@ -838,7 +937,6 @@ export default function CargoPage() {
           placeholder='Название груза'
           value={formData.title}
           onChange={(e) => handleInputChange('title', e.target.value)}
-          // error={errors.title}
         />
         {errors.title && (
           <p className='text-sm text-red-500 mt-1'>{errors.title}</p>
@@ -855,7 +953,6 @@ export default function CargoPage() {
             onChange={(e) =>
               handleInputChange('weight', parseFloat(e.target.value))
             }
-            // error={errors.weight}
           />
           {errors.weight && (
             <p className='text-sm text-red-500 mt-1'>{errors.weight}</p>
@@ -921,38 +1018,195 @@ export default function CargoPage() {
     </div>
   );
 
+  const LocationSelector = ({
+    value,
+    onChange,
+    placeholder,
+    error,
+    errorMessage,
+  }: any) => {
+    const [open, setOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const containerRef = useRef<HTMLInputElement>(null);
+
+    // Обработка клика вне компонента для закрытия выпадающего списка
+    useEffect(() => {
+      const handleClickOutside = (event: any) => {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target)
+        ) {
+          setOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, []);
+
+    // Поиск локаций при вводе
+    useEffect(() => {
+      if (searchQuery.length >= 2) {
+        setIsLoading(true);
+        setOpen(true); // Открываем список при вводе
+
+        const timer = setTimeout(() => {
+          api
+            .searchLocations(searchQuery)
+            .then((data) => {
+              setLocations(Array.isArray(data) ? data : []);
+              setIsLoading(false);
+            })
+            .catch((err) => {
+              console.error('Search error:', err);
+              setLocations([]);
+              setIsLoading(false);
+            });
+        }, 300);
+
+        return () => clearTimeout(timer);
+      } else {
+        setLocations([]);
+        if (searchQuery.length === 0) {
+          setOpen(false);
+        }
+      }
+    }, [searchQuery]);
+
+    const handleSelect = (location: any) => {
+      onChange({
+        id: location.id,
+        name: location.full_name || location.name,
+      });
+      setSearchQuery('');
+      setOpen(false);
+    };
+
+    return (
+      <div className='relative w-full' ref={containerRef}>
+        <Input
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+          className={cn(error && 'border-red-500')}
+        />
+
+        {/* Показываем выбранное значение если оно есть и поиск пустой */}
+        {value.name && searchQuery === '' && (
+          <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
+            {value.name}
+          </div>
+        )}
+
+        {open && (
+          <div className='absolute z-10 w-full mt-1 bg-popover rounded-md border shadow-md'>
+            <div className='p-1'>
+              {isLoading ? (
+                <div className='p-4 text-center text-sm text-muted-foreground'>
+                  Загрузка...
+                </div>
+              ) : locations.length === 0 ? (
+                <div className='p-4 text-center text-sm text-muted-foreground'>
+                  {searchQuery.length < 2
+                    ? 'Введите минимум 2 символа для поиска'
+                    : 'Ничего не найдено'}
+                </div>
+              ) : (
+                <ScrollArea className='h-[300px]'>
+                  {locations.map((location) => (
+                    <div
+                      key={location.id}
+                      onClick={() => handleSelect(location)}
+                      className={cn(
+                        'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
+                        'hover:bg-muted'
+                      )}
+                    >
+                      <div className='flex-1'>
+                        <p className='text-sm font-medium'>
+                          {location.name}
+                          {location.level === 3 && location.parent_name && (
+                            <span className='text-muted-foreground'>
+                              {' '}
+                              - {location.parent_name}
+                            </span>
+                          )}
+                          {location.country_name && location.level !== 1 && (
+                            <span className='text-muted-foreground'>
+                              , {location.country_name}
+                            </span>
+                          )}
+                        </p>
+                        {location.full_name && (
+                          <p className='text-xs text-muted-foreground'>
+                            {location.full_name}
+                          </p>
+                        )}
+                      </div>
+                      {value.id === location.id && (
+                        <Check className='h-4 w-4' />
+                      )}
+                    </div>
+                  ))}
+                </ScrollArea>
+              )}
+            </div>
+          </div>
+        )}
+
+        {error && errorMessage && (
+          <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+        )}
+      </div>
+    );
+  };
+
   const renderRouteContent = () => (
     <div className='space-y-4'>
       <div>
         <label className='block text-sm font-medium mb-2'>
           Пункт погрузки*
         </label>
-        <Input
-          placeholder='Откуда'
-          value={formData.loading_point}
-          onChange={(e) => handleInputChange('loading_point', e.target.value)}
-          // error={errors.loading_point}
+        <LocationSelector
+          value={{
+            id: formData.loading_location,
+            name: formData.loading_point,
+          }}
+          onChange={({ id, name }: any) => {
+            handleInputChange('loading_location', id);
+            handleInputChange('loading_point', name);
+          }}
+          placeholder='Выберите пункт погрузки'
+          error={!!errors.loading_point}
+          errorMessage={errors.loading_point}
         />
-        {errors.loading_point && (
-          <p className='text-sm text-red-500 mt-1'>{errors.loading_point}</p>
-        )}
       </div>
 
       <div>
         <label className='block text-sm font-medium mb-2'>
           Пункт выгрузки*
         </label>
-        <Input
-          placeholder='Куда'
-          value={formData.unloading_point}
-          onChange={(e) => handleInputChange('unloading_point', e.target.value)}
-          // error={errors.unloading_point}
+        <LocationSelector
+          value={{
+            id: formData.unloading_location,
+            name: formData.unloading_point,
+          }}
+          onChange={({ id, name }: any) => {
+            handleInputChange('unloading_location', id);
+            handleInputChange('unloading_point', name);
+          }}
+          placeholder='Выберите пункт выгрузки'
+          error={!!errors.unloading_point}
+          errorMessage={errors.unloading_point}
         />
-        {errors.unloading_point && (
-          <p className='text-sm text-red-500 mt-1'>{errors.unloading_point}</p>
-        )}
       </div>
 
+      {/* Остальной код для дополнительных точек маршрута */}
       {formData.additional_points?.map((point, index) => (
         <div key={index} className='flex items-center gap-2'>
           <Input
@@ -985,7 +1239,11 @@ export default function CargoPage() {
         variant='outline'
         onClick={() => {
           const newPoints = [...(formData.additional_points || [])];
-          newPoints.push({ point: '', type: 'loading' });
+          newPoints.push({
+            point: '',
+            type: 'loading',
+            location_id: undefined,
+          });
           handleInputChange('additional_points', newPoints);
         }}
       >
@@ -1057,7 +1315,6 @@ export default function CargoPage() {
           value={formData.loading_date}
           onChange={(e) => handleInputChange('loading_date', e.target.value)}
           min={new Date().toISOString().split('T')[0]}
-          // error={errors.loading_date}
         />
         {errors.loading_date && (
           <p className='text-sm text-red-500 mt-1'>{errors.loading_date}</p>
@@ -1072,8 +1329,7 @@ export default function CargoPage() {
             handleInputChange('is_constant', checked)
           }
         />
-        <label htmlFor='constant'>Постоян</label>
-        {/* </div> */}
+        <label htmlFor='constant'>Постоянный</label>
       </div>
       <div className='flex items-center space-x-2'>
         <Checkbox
@@ -1389,7 +1645,6 @@ export default function CargoPage() {
         </div>
       )}
 
-      {/* <Link href={'/student/cargos/'}>go to cargos nigga</Link> */}
       <NavigationMenu
         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
       />

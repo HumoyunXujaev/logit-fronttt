@@ -644,7 +644,7 @@ export default function MyVehiclesPage() {
                       setDocuments((docs) => [...docs, newDoc]);
                     }
                   }}
-                  allowedTypes={['image/jpeg', 'image/png', 'application/pdf']}
+                  // allowedTypes={['image/jpeg', 'image/png', 'application/pdf']}
                   maxSize={5 * 1024 * 1024}
                   label={`Загрузить ${docType.label}`}
                 />

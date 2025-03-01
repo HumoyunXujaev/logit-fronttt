@@ -61,17 +61,17 @@ export class FileService {
     file: File,
     options: {
       maxSize?: number;
-      allowedTypes?: string[];
+      // allowedTypes?: string[];
     } = {}
   ): string | null {
     const {
       maxSize = 5 * 1024 * 1024, // 5MB default
-      allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'],
+      // allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'],
     } = options;
 
-    if (!allowedTypes.includes(file.type)) {
-      return 'Неподдерживаемый тип файла';
-    }
+    // if (!allowedTypes.includes(file.type)) {
+    //   return 'Неподдерживаемый тип файла';
+    // }
 
     if (file.size > maxSize) {
       return `Размер файла не должен превышать ${maxSize / (1024 * 1024)}MB`;

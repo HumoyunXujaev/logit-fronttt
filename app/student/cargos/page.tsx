@@ -203,12 +203,14 @@ export default function StudentCargosPage() {
         <div className='flex justify-between items-start mb-2'>
           <div>
             <h3 className='font-bold text-lg'>{cargo.title}</h3>
-            <p className='text-sm text-gray-600'>
-              {cargo.owner.role === 'cargo-owner'
-                ? 'Грузовладелец'
-                : 'Экспедитор'}
-              : {cargo.owner.company_name || cargo.owner.full_name}
-            </p>
+            {cargo?.owner && (
+              <p className='text-sm text-gray-600'>
+                {cargo?.owner?.role === 'cargo-owner'
+                  ? 'Грузовладелец'
+                  : 'Экспедитор'}
+                : {cargo?.owner?.company_name || cargo?.owner?.full_name}
+              </p>
+            )}
           </div>
 
           {mycargos?.includes(cargo.id) && <Badge>ЭТО ВАШ ГРУЗ</Badge>}

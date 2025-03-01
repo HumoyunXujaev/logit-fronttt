@@ -21,6 +21,10 @@ codebase
 # misc
 .DS_Store
 *.pem
+.codebase
+.codebase.md 
+codebase.md
+.codebase.md
 
 # debug
 npm-debug.log*

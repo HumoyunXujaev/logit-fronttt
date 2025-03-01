@@ -11,7 +11,6 @@ interface FileUploadProps {
   onUpload: (file: any) => void;
   // type: string;
   maxSize?: number;
-  allowedTypes?: string[];
   label?: string;
 }
 
@@ -19,7 +18,6 @@ export function FileUpload({
   onUpload,
   // type,
   maxSize = 5 * 1024 * 1024,
-  allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'],
   label = 'Загрузить файл',
 }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -33,7 +31,6 @@ export function FileUpload({
 
     const error = FileService.validateFile(selectedFile, {
       maxSize,
-      allowedTypes,
     });
     if (error) {
       toast.error(error);
@@ -77,7 +74,7 @@ export function FileUpload({
         <input
           type='file'
           onChange={handleFileSelect}
-          accept={allowedTypes.join(',')}
+          // accept={allowedTypes.join(',')}
           className='hidden'
           ref={fileInputRef}
         />
@@ -129,7 +126,7 @@ export function FileUpload({
       )}
 
       <div className='text-sm text-muted-foreground'>
-        <p>Поддерживаемые форматы: {allowedTypes.join(', ')}</p>
+        {/* <p>Поддерживаемые форматы: {allowedTypes.join(', ')}</p> */}
         <p>Максимальный размер: {FileService.formatFileSize(maxSize)}</p>
       </div>
     </div>

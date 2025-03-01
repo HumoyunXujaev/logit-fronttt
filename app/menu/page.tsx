@@ -142,6 +142,7 @@ export interface Document {
   type: string;
   title: string;
   file_url: string;
+  file: any;
   uploaded_at: string;
   verified: boolean;
   verified_at?: string;
@@ -163,7 +164,16 @@ const DocumentsSection = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDocument, setSelectedDocument] =
     useState<DocumentFormData | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<UserDocument | null>(
+    null
+  );
 
+  // Add this function to handle opening the document viewer
+  const handleViewDocument = (document: UserDocument) => {
+    setViewingDocument(document);
+    setIsViewerOpen(true);
+  };
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -220,7 +230,7 @@ const DocumentsSection = () => {
             <Button
               variant='ghost'
               size='sm'
-              onClick={() => window.open(document.file_url, '_blank')}
+              onClick={() => handleViewDocument(document)}
             >
               <FileIcon className='h-4 w-4 mr-1' />
               Просмотр
@@ -239,6 +249,81 @@ const DocumentsSection = () => {
     </Card>
   );
 
+  // Add this function to determine the document type
+  const getDocumentType = (url: string): 'image' | 'pdf' | 'other' => {
+    const extension = url?.split('.')?.pop()?.toLowerCase();
+    if (
+      ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']?.includes(extension || '')
+    ) {
+      return 'image';
+    } else if (extension === 'pdf') {
+      return 'pdf';
+    }
+    return 'other';
+  };
+
+  // Add this document viewer dialog component to the end of the render function before the return statement
+  const renderDocumentViewer = () => (
+    <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+      <DialogContent className='max-w-4xl w-[90vw]'>
+        <DialogHeader>
+          <DialogTitle>{viewingDocument?.title}</DialogTitle>
+        </DialogHeader>
+        <div className='my-4 max-h-[70vh] overflow-auto'>
+          {viewingDocument && (
+            <>
+              {getDocumentType(viewingDocument.file) === 'image' ? (
+                <img
+                  src={`${'http://localhost:8000/' + viewingDocument.file}`}
+                  alt={viewingDocument.title}
+                  className='max-w-full h-auto mx-auto'
+                />
+              ) : getDocumentType(viewingDocument.file) === 'pdf' ? (
+                <iframe
+                  src={`${
+                    'http://localhost:8000/' + viewingDocument.file
+                  }#toolbar=0`}
+                  className='w-full h-[60vh]'
+                  title={viewingDocument.title}
+                />
+              ) : (
+                <div className='text-center py-8'>
+                  <p>Невозможно отобразить данный тип файла в браузере.</p>
+                  <Button
+                    className='mt-4'
+                    onClick={() =>
+                      window.open(
+                        'http://localhost:8000/' + viewingDocument.file,
+                        '_blank'
+                      )
+                    }
+                  >
+                    Открыть в новой вкладке
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant='outline' onClick={() => setIsViewerOpen(false)}>
+            Закрыть
+          </Button>
+          <Button
+            onClick={() =>
+              window.open(
+                'http://localhost:8000/' + viewingDocument?.file,
+                '_blank'
+              )
+            }
+          >
+            Открыть в новой вкладке
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   const renderAddDocumentDialog = () => (
     <Dialog open={isAddingDocument} onOpenChange={setIsAddingDocument}>
       <DialogContent>
@@ -247,8 +332,8 @@ const DocumentsSection = () => {
         </DialogHeader>
 
         <div className='space-y-4'>
-          <div>
-            <label className='block text-sm font-medium mb-2'>type*</label>
+          <div className='border-2'>
+            {/* <label className='block text-sm font-medium mb-2'>type*</label> */}
             <Select
               value={selectedDocument?.type}
               onValueChange={(value: any) =>
@@ -314,7 +399,6 @@ const DocumentsSection = () => {
                 toast.error('Выберите тип документа');
               }
             }}
-            allowedTypes={['image/jpeg', 'image/png', 'application/pdf']}
             maxSize={5 * 1024 * 1024}
             label='Загрузить документ'
           />
@@ -346,6 +430,7 @@ const DocumentsSection = () => {
       )}
 
       {renderAddDocumentDialog()}
+      {renderDocumentViewer()}
     </div>
   );
 };

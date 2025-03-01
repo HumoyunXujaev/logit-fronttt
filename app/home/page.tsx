@@ -678,12 +678,367 @@
 //   //   </div>
 //   // );
 // }
+// ...........................................................................................................................................................................................................................................................
 
+// 'use client';
+
+// import React, { useState, useEffect } from 'react';
+// import { Button } from '@/components/ui/button';
+// import { Input } from '@/components/ui/input';
+// import { Card, CardContent } from '@/components/ui/card';
+// import { Badge } from '@/components/ui/badge';
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+// } from '@/components/ui/dialog';
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from '@/components/ui/select';
+// import { Checkbox } from '@/components/ui/checkbox';
+// import { ScrollArea } from '@/components/ui/scroll-area';
+// import {
+//   Filter,
+//   Star,
+//   CheckCircle,
+//   Clock,
+//   Bell,
+//   Heart,
+//   ChevronDown,
+//   ChevronUp,
+//   Search,
+//   Loader2,
+// } from 'lucide-react';
+// import NavigationMenu from '../components/NavigationMenu';
+// import { useRouter } from 'next/navigation';
+// import { useUser } from '@/contexts/UserContext';
+// import { useApp } from '@/contexts/AppContext';
+// import { api } from '@/lib/api';
+// import { toast } from 'sonner';
+
+// interface CargoResponse {
+//   results: Cargo[];
+// }
+
+// interface Cargo {
+//   id: string;
+//   title: string;
+//   description: string;
+//   owner: {
+//     id: string;
+//     role: string;
+//     company_name?: string;
+//     full_name: string;
+//     rating?: number;
+//     is_verified?: boolean;
+//   };
+//   weight: number;
+//   volume?: number;
+//   loading_point: string;
+//   unloading_point: string;
+//   loading_date: string;
+//   vehicle_type: string;
+//   payment_method: string;
+//   price?: number;
+//   status: string;
+//   created_at: string;
+// }
+
+// export default function OrdersPage() {
+//   const [searchTerm, setSearchTerm] = useState('');
+//   const [cargos, setCargos] = useState<CargoResponse>({ results: [] });
+//   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+//   const [showNotificationDialog, setShowNotificationDialog] = useState(false);
+//   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [currentCargo, setCurrentCargo] = useState<Cargo | null>(null);
+//   const [filters, setFilters] = useState({
+//     vehicle_type: '',
+//     loading_point: '',
+//     unloading_point: '',
+//   });
+
+//   const { userState } = useUser();
+//   const router = useRouter();
+//   const {
+//     addNotification,
+//     addToFavorites,
+//     removeFromFavorites,
+//     isFavorite,
+//     notifications,
+//   } = useApp();
+
+//   useEffect(() => {
+//     fetchCargos();
+//   }, [searchTerm, filters]);
+
+//   const fetchCargos = async () => {
+//     try {
+//       setIsLoading(true);
+//       const response = await api.getCargos({
+//         search: searchTerm,
+//         ...filters,
+//       });
+//       setCargos(response);
+//       console.log(response, 'response bro');
+//     } catch (error) {
+//       toast.error('Ошибка при загрузке грузов');
+//       console.error('Fetch cargos error:', error);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleNotificationToggle = (cargo: Cargo) => {
+//     if (
+//       notifications.some(
+//         (notification) =>
+//           notification.orderId === Number(cargo.id) && !notification.isRead
+//       )
+//     ) {
+//       toast.error('Для этого груза уже включены уведомления');
+//       return;
+//     }
+//     setCurrentCargo(cargo);
+//     setShowNotificationDialog(true);
+//   };
+
+//   const handleEnableNotification = () => {
+//     if (currentCargo) {
+//       addNotification({
+//         orderId: Number(currentCargo.id),
+//         type: 'cargo',
+//         message: `Включены уведомления для груза: ${currentCargo.title} (${currentCargo.loading_point} - ${currentCargo.unloading_point})`,
+//       });
+//       setShowNotificationDialog(false);
+//     }
+//   };
+
+//   const handleFavoriteToggle = (cargo: Cargo) => {
+//     if (isFavorite(Number(cargo.id))) {
+//       toast.error('Этот груз уже находится в избранном');
+//       return;
+//     }
+
+//     addToFavorites({
+//       orderId: Number(cargo.id),
+//       type: cargo.vehicle_type,
+//       title: `${cargo.title}: ${cargo.loading_point} - ${cargo.unloading_point}`,
+//       description: cargo.description,
+//       details: {
+//         Вес: `${cargo.weight} т`,
+//         Объем: cargo.volume ? `${cargo.volume} м³` : 'Не указан',
+//         'Тип транспорта': cargo.vehicle_type,
+//         Оплата: cargo.payment_method,
+//         Цена: cargo.price ? `${cargo.price} ₽` : 'Договорная',
+//       },
+//     });
+//   };
+
+//   const renderStars = (rating: number = 0) => {
+//     return Array(5)
+//       .fill(0)
+//       .map((_, i) => (
+//         <Star
+//           key={i}
+//           className={`h-4 w-4 ${
+//             i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+//           }`}
+//         />
+//       ));
+//   };
+
+//   const toggleOrderExpansion = (orderId: string) => {
+//     setExpandedOrder(expandedOrder === orderId ? null : orderId);
+//   };
+
+//   if (isLoading) {
+//     return (
+//       <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
+//         <Loader2 className='h-8 w-8 animate-spin text-blue-600' />
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className='min-h-screen bg-blue-600 p-4 pb-20'>
+//       <div className='flex items-center mb-4 bg-white rounded-lg p-2'>
+//         <Input
+//           type='text'
+//           placeholder='Поиск заказов...'
+//           value={searchTerm}
+//           onChange={(e) => setSearchTerm(e.target.value)}
+//           className='mr-2 flex-grow'
+//         />
+//         <Button
+//           variant='default'
+//           size='sm'
+//           className='bg-yellow-400 text-black hover:bg-yellow-500 whitespace-nowrap'
+//           onClick={() => setIsFilterModalOpen(true)}
+//         >
+//           <Filter className='h-4 w-4 mr-2' />
+//           Фильтры
+//         </Button>
+//       </div>
+
+//       <div className='space-y-4 mb-20'>
+//         {cargos?.results?.map((cargo) => (
+//           <Card key={cargo.id} className='bg-white overflow-hidden'>
+//             <CardContent className='p-4'>
+//               {cargo.owner && (
+//                 <>
+
+//                 <div className='flex justify-between items-start mb-2'>
+//                   <div className='flex space-x-1'>
+//                     {cargo.owner && cargo.owner.rating && cargo.owner.rating > 4 && (
+//                       <Badge
+//                         variant='secondary'
+//                         className='bg-yellow-100 text-yellow-800'
+//                         title='Высокий рейтинг'
+//                       >
+//                         <Star className='h-4 w-4' />
+//                       </Badge>
+//                     )}
+//                     {cargo.owner && cargo.owner.is_verified && (
+//                       <Badge
+//                         variant='secondary'
+//                         className='bg-green-100 text-green-800'
+//                         title='Профиль подтвержден'
+//                       >
+//                         <CheckCircle className='h-4 w-4' />
+//                       </Badge>
+//                     )}
+//                   </div>
+
+//                   <div className='flex items-center'>
+//                     {cargo.owner && cargo.owner.rating && (
+//                       <>
+//                         <span className='font-bold mr-1'>
+//                           {cargo.owner.rating}
+//                         </span>
+//                         <div className='flex'>
+//                           {renderStars(cargo.owner.rating)}
+//                         </div>
+//                       </>
+//                     )}
+//                   </div>
+//                 </div>
+//                 </>
+//               )}
+
+//               <div className='flex justify-between items-center mb-2'>
+//                 <span className='font-bold text-lg'>
+//                   {cargo.loading_point} - {cargo.unloading_point}
+//                 </span>
+//                 <span className='text-sm text-gray-500'>
+//                   {new Date(cargo.created_at).toLocaleString()}
+//                 </span>
+//               </div>
+
+//               <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
+//                 <span>Груз: {cargo.title}</span>
+//                 <span>Вес: {cargo.weight} т</span>
+//                 <span>Тип: {cargo.vehicle_type}</span>
+//                 <span>Оплата: {cargo.payment_method}</span>
+//               </div>
+
+//               <div className='mb-2'>
+//                 <span className='font-semibold'>
+//                   Цена: {cargo.price ? `${cargo.price} ₽` : 'Договорная'}
+//                 </span>
+//               </div>
+
+//               {expandedOrder === cargo.id && (
+//                 <div className='mt-4 text-sm'>
+//                   <p>Описание: {cargo.description}</p>
+//                   {cargo.volume && <p>Объем: {cargo.volume} м³</p>}
+//                   <p>
+//                     Дата загрузки:{' '}
+//                     {new Date(cargo.loading_date).toLocaleDateString()}
+//                   </p>
+//                 </div>
+//               )}
+
+//               <div className='flex justify-between mt-4'>
+//                 <Button
+//                   variant='outline'
+//                   size='sm'
+//                   className='flex-1 mr-1'
+//                   onClick={() => toggleOrderExpansion(cargo.id)}
+//                 >
+//                   {expandedOrder === cargo.id ? (
+//                     <ChevronUp className='h-4 w-4 mr-1' />
+//                   ) : (
+//                     <ChevronDown className='h-4 w-4 mr-1' />
+//                   )}
+//                   {expandedOrder === cargo.id ? 'Скрыть' : 'Подробнее'}
+//                 </Button>
+//                 <Button
+//                   variant='outline'
+//                   size='sm'
+//                   className='flex-1 ml-1 mr-1'
+//                   onClick={() => handleNotificationToggle(cargo)}
+//                 >
+//                   <Bell className='h-4 w-4 mr-1' />
+//                 </Button>
+//                 <Button
+//                   variant='outline'
+//                   size='sm'
+//                   className={`flex-1 ${
+//                     isFavorite(Number(cargo.id))
+//                       ? 'text-red-500 hover:text-red-600'
+//                       : ''
+//                   }`}
+//                   onClick={() => handleFavoriteToggle(cargo)}
+//                 >
+//                   <Heart className='h-4 w-4 mr-1' />
+//                 </Button>
+//               </div>
+//             </CardContent>
+//           </Card>
+//         ))}
+//       </div>
+
+//       <Dialog
+//         open={showNotificationDialog}
+//         onOpenChange={setShowNotificationDialog}
+//       >
+//         <DialogContent>
+//           <DialogHeader>
+//             <DialogTitle>Включить уведомления?</DialogTitle>
+//           </DialogHeader>
+//           <p>
+//             Вы будете получать уведомления о новых предложениях по этому
+//             направлению и типу груза.
+//           </p>
+//           <div className='flex justify-end space-x-2 mt-4'>
+//             <Button
+//               variant='outline'
+//               onClick={() => setShowNotificationDialog(false)}
+//             >
+//               Отмена
+//             </Button>
+//             <Button onClick={handleEnableNotification}>Включить</Button>
+//           </div>
+//         </DialogContent>
+//       </Dialog>
+
+//       <NavigationMenu
+//         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
+//       />
+//     </div>
+//   );
+// }
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -692,6 +1047,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -699,8 +1055,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DateRange, Range, RangeKeyDict } from 'react-date-range';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
 import {
   Filter,
   Star,
@@ -710,15 +1068,39 @@ import {
   Heart,
   ChevronDown,
   ChevronUp,
-  Search,
+  X,
+  Check,
   Loader2,
 } from 'lucide-react';
 import NavigationMenu from '../components/NavigationMenu';
-import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { Slider } from '@/components/ui/slider';
+
+interface Location {
+  id: string;
+  name: string;
+  full_name?: string;
+  level?: number;
+  parent_name?: string;
+  country_name?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface FilterState {
+  category: string;
+  loading_location: { id: string; name: string };
+  unloading_location: { id: string; name: string };
+  vehicleType: string;
+  dateRange: Range;
+  notifications: boolean;
+  radius: number; // Добавлено для радиуса поиска
+}
 
 interface CargoResponse {
   results: Cargo[];
@@ -740,6 +1122,8 @@ interface Cargo {
   volume?: number;
   loading_point: string;
   unloading_point: string;
+  loading_location?: string;
+  unloading_location?: string;
   loading_date: string;
   vehicle_type: string;
   payment_method: string;
@@ -747,6 +1131,364 @@ interface Cargo {
   status: string;
   created_at: string;
 }
+
+const cargoCategories = [
+  'Металл',
+  'Текстиль',
+  'Продукты',
+  'Техника',
+  'Стройматериалы',
+];
+
+const vehicleTypes = [
+  'tent',
+  'refrigerator',
+  'isothermal',
+  'container',
+  'car_carrier',
+  'board',
+];
+
+const LocationSelector = ({
+  value,
+  onChange,
+  placeholder,
+  error,
+  errorMessage,
+}: {
+  value: { id: string; name: string };
+  onChange: (value: { id: string; name: string }) => void;
+  placeholder: string;
+  error?: boolean;
+  errorMessage?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Обработка клика вне компонента для закрытия выпадающего списка
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Поиск локаций при вводе
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      setIsLoading(true);
+      setOpen(true); // Открываем список при вводе
+
+      const timer = setTimeout(() => {
+        api
+          .searchLocations(searchQuery)
+          .then((data) => {
+            setLocations(Array.isArray(data) ? data : []);
+            setIsLoading(false);
+          })
+          .catch((err) => {
+            console.error('Search error:', err);
+            setLocations([]);
+            setIsLoading(false);
+          });
+      }, 300);
+
+      return () => clearTimeout(timer);
+    } else {
+      setLocations([]);
+      if (searchQuery.length === 0) {
+        setOpen(false);
+      }
+    }
+  }, [searchQuery]);
+
+  const handleSelect = (location: Location) => {
+    onChange({
+      id: location.id,
+      name: location.full_name || location.name,
+    });
+    setSearchQuery('');
+    setOpen(false);
+  };
+
+  return (
+    <div className='relative w-full' ref={containerRef}>
+      <Input
+        placeholder={placeholder}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+        className={cn(error && 'border-red-500')}
+      />
+
+      {/* Показываем выбранное значение если оно есть и поиск пустой */}
+      {value.name && searchQuery === '' && (
+        <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
+          {value.name}
+        </div>
+      )}
+
+      {open && (
+        <div className='absolute z-10 w-full mt-1 bg-white rounded-md border shadow-md'>
+          <div className='p-1'>
+            {isLoading ? (
+              <div className='p-4 text-center text-sm text-muted-foreground'>
+                Загрузка...
+              </div>
+            ) : locations.length === 0 ? (
+              <div className='p-4 text-center text-sm text-muted-foreground'>
+                {searchQuery.length < 2
+                  ? 'Введите минимум 2 символа для поиска'
+                  : 'Ничего не найдено'}
+              </div>
+            ) : (
+              <ScrollArea className='h-[300px]'>
+                {locations.map((location) => (
+                  <div
+                    key={location.id}
+                    onClick={() => handleSelect(location)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
+                      'hover:bg-blue-50'
+                    )}
+                  >
+                    <div className='flex-1'>
+                      <p className='text-sm font-medium'>
+                        {location.name}
+                        {location.level === 3 && location.parent_name && (
+                          <span className='text-gray-500'>
+                            {' - '}
+                            {location.parent_name}
+                          </span>
+                        )}
+                        {location.country_name && location.level !== 1 && (
+                          <span className='text-gray-500'>
+                            {', '}
+                            {location.country_name}
+                          </span>
+                        )}
+                      </p>
+                      {location.full_name && (
+                        <p className='text-xs text-gray-500'>
+                          {location.full_name}
+                        </p>
+                      )}
+                    </div>
+                    {value.id === location.id && <Check className='h-4 w-4' />}
+                  </div>
+                ))}
+              </ScrollArea>
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && errorMessage && (
+        <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+      )}
+    </div>
+  );
+};
+
+const FilterModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onApply: (filters: any) => void;
+}> = ({ isOpen, onClose, onApply }) => {
+  const [filters, setFilters] = useState<FilterState>({
+    category: '',
+    loading_location: { id: '', name: '' },
+    unloading_location: { id: '', name: '' },
+    vehicleType: '',
+    dateRange: {
+      startDate: undefined,
+      endDate: undefined,
+      key: 'selection',
+    },
+    notifications: false,
+    radius: 100, // Значение по умолчанию
+  });
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateRangeChange = (ranges: RangeKeyDict) => {
+    setFilters((prev) => ({ ...prev, dateRange: ranges.selection }));
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setFilters((prev) => ({ ...prev, notifications: checked }));
+  };
+
+  const handleRadiusChange = (value: number[]) => {
+    setFilters((prev) => ({ ...prev, radius: value[0] }));
+  };
+
+  const handleApply = () => {
+    onApply({
+      category: filters.category,
+      loading_location_id: filters.loading_location.id, // Изменено с loading_location
+      unloading_location_id: filters.unloading_location.id, // Изменено с unloading_location
+      vehicle_type: filters.vehicleType,
+      date_from: filters.dateRange.startDate
+        ? new Date(filters.dateRange.startDate).toISOString().split('T')[0]
+        : undefined,
+      date_to: filters.dateRange.endDate
+        ? new Date(filters.dateRange.endDate).toISOString().split('T')[0]
+        : undefined,
+      notifications: filters.notifications,
+      radius: filters.radius, // Добавляем радиус в фильтры
+    });
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className='bg-blue-600 text-white max-w-lg'>
+        <DialogHeader>
+          <DialogTitle className='text-white text-center'>
+            Поиск грузов
+          </DialogTitle>
+        </DialogHeader>
+        <ScrollArea className='pr-4 h-[70vh] max-h-[600px]'>
+          <div className='space-y-4 px-1'>
+            <Select
+              onValueChange={(value) => handleSelectChange('category', value)}
+            >
+              <SelectTrigger className='bg-blue-500 text-white border-blue-400'>
+                <SelectValue placeholder='Категория грузов' />
+              </SelectTrigger>
+              <SelectContent>
+                {cargoCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              onValueChange={(value) =>
+                handleSelectChange('vehicleType', value)
+              }
+            >
+              <SelectTrigger className='bg-blue-500 text-white border-blue-400'>
+                <SelectValue placeholder='Тип транспорта' />
+              </SelectTrigger>
+              <SelectContent>
+                {vehicleTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type === 'tent'
+                      ? 'Тент'
+                      : type === 'refrigerator'
+                      ? 'Рефрижератор'
+                      : type === 'isothermal'
+                      ? 'Изотерм'
+                      : type === 'container'
+                      ? 'Контейнер'
+                      : type === 'car_carrier'
+                      ? 'Автовоз'
+                      : 'Борт'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className='space-y-2'>
+              <label className='text-white text-sm'>Откуда</label>
+              <LocationSelector
+                value={filters.loading_location}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    loading_location: value,
+                  }))
+                }
+                placeholder='Выберите пункт погрузки'
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <label className='text-white text-sm'>Куда</label>
+              <LocationSelector
+                value={filters.unloading_location}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    unloading_location: value,
+                  }))
+                }
+                placeholder='Выберите пункт выгрузки'
+              />
+            </div>
+
+            {/* Радиус поиска */}
+            <div className='space-y-2'>
+              <div className='flex justify-between items-center'>
+                <label className='text-white text-sm'>
+                  Радиус поиска: {filters.radius} км
+                </label>
+              </div>
+              <Slider
+                defaultValue={[100]}
+                max={500}
+                min={0}
+                step={10}
+                value={[filters.radius]}
+                onValueChange={handleRadiusChange}
+                className='py-4'
+              />
+              <p className='text-xs text-blue-200'>
+                Поиск грузов в радиусе до {filters.radius} км от выбранных точек
+              </p>
+            </div>
+
+            <div className='bg-white rounded-md p-2'>
+              <DateRange
+                ranges={[filters.dateRange]}
+                onChange={handleDateRangeChange}
+                months={1}
+                direction='vertical'
+                className='w-full'
+              />
+            </div>
+
+            <div className='flex items-center space-x-2'>
+              <Checkbox
+                id='notifications'
+                checked={filters.notifications}
+                onCheckedChange={handleCheckboxChange}
+              />
+              <label htmlFor='notifications' className='text-white'>
+                Включить уведомления
+              </label>
+            </div>
+
+            <Button
+              onClick={handleApply}
+              className='w-full bg-yellow-400 text-blue-800 hover:bg-yellow-500'
+            >
+              Найти грузы
+            </Button>
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -756,11 +1498,9 @@ export default function OrdersPage() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentCargo, setCurrentCargo] = useState<Cargo | null>(null);
-  const [filters, setFilters] = useState({
-    vehicle_type: '',
-    loading_point: '',
-    unloading_point: '',
-  });
+  const [filterParams, setFilterParams] = useState<any>({});
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const { userState } = useUser();
   const router = useRouter();
@@ -774,22 +1514,50 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchCargos();
-  }, [searchTerm, filters]);
+  }, [searchTerm, filterParams]);
 
   const fetchCargos = async () => {
     try {
       setIsLoading(true);
+      console.log(searchTerm, 'searchterm');
+      console.log(filterParams, 'filterparams');
       const response = await api.getCargos({
         search: searchTerm,
-        ...filters,
+        ...filterParams,
       });
       setCargos(response);
-      console.log(response, 'response bro');
+      console.log(response, 'res')
     } catch (error) {
       toast.error('Ошибка при загрузке грузов');
       console.error('Fetch cargos error:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleApplyFilters = (filters: any) => {
+    console.log('Applied filters:', filters);
+    setFilterParams(filters);
+
+    // If notifications are enabled, add a notification for the filter
+    if (filters.notifications) {
+      const notificationMessage = `Включены уведомления для поиска: ${
+        filters.category ? `${filters.category}, ` : ''
+      }${filters.loading_location ? `Из: ${filters.loading_location}, ` : ''}${
+        filters.unloading_location ? `В: ${filters.unloading_location}` : ''
+      }${filters.radius ? `, Радиус: ${filters.radius} км` : ''}`;
+
+      addNotification({
+        orderId: Date.now(), // Use timestamp as ID
+        type: 'filter',
+        message: notificationMessage,
+      });
+
+      toast.success('Уведомления о новых грузах включены');
     }
   };
 
@@ -800,7 +1568,8 @@ export default function OrdersPage() {
           notification.orderId === Number(cargo.id) && !notification.isRead
       )
     ) {
-      toast.error('Для этого груза уже включены уведомления');
+      setErrorMessage('Для этого груза уже включены нотификации');
+      setShowErrorDialog(true);
       return;
     }
     setCurrentCargo(cargo);
@@ -815,28 +1584,30 @@ export default function OrdersPage() {
         message: `Включены уведомления для груза: ${currentCargo.title} (${currentCargo.loading_point} - ${currentCargo.unloading_point})`,
       });
       setShowNotificationDialog(false);
+      toast.success('Уведомления включены');
     }
   };
 
   const handleFavoriteToggle = (cargo: Cargo) => {
     if (isFavorite(Number(cargo.id))) {
-      toast.error('Этот груз уже находится в избранном');
-      return;
+      removeFromFavorites(Number(cargo.id));
+      toast.success('Груз удален из избранного');
+    } else {
+      addToFavorites({
+        orderId: Number(cargo.id),
+        type: cargo.vehicle_type,
+        title: `${cargo.title}: ${cargo.loading_point} - ${cargo.unloading_point}`,
+        description: cargo.description,
+        details: {
+          Вес: `${cargo.weight} т`,
+          Объем: cargo.volume ? `${cargo.volume} м³` : 'Не указан',
+          'Тип транспорта': cargo.vehicle_type,
+          Оплата: cargo.payment_method,
+          Цена: cargo.price ? `${cargo.price} ₽` : 'Договорная',
+        },
+      });
+      toast.success('Груз добавлен в избранное');
     }
-
-    addToFavorites({
-      orderId: Number(cargo.id),
-      type: cargo.vehicle_type,
-      title: `${cargo.title}: ${cargo.loading_point} - ${cargo.unloading_point}`,
-      description: cargo.description,
-      details: {
-        Вес: `${cargo.weight} т`,
-        Объем: cargo.volume ? `${cargo.volume} м³` : 'Не указан',
-        'Тип транспорта': cargo.vehicle_type,
-        Оплата: cargo.payment_method,
-        Цена: cargo.price ? `${cargo.price} ₽` : 'Договорная',
-      },
-    });
   };
 
   const renderStars = (rating: number = 0) => {
@@ -856,14 +1627,6 @@ export default function OrdersPage() {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
-  if (isLoading) {
-    return (
-      <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
-        <Loader2 className='h-8 w-8 animate-spin text-blue-600' />
-      </div>
-    );
-  }
-
   return (
     <div className='min-h-screen bg-blue-600 p-4 pb-20'>
       <div className='flex items-center mb-4 bg-white rounded-lg p-2'>
@@ -871,7 +1634,7 @@ export default function OrdersPage() {
           type='text'
           placeholder='Поиск заказов...'
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearch}
           className='mr-2 flex-grow'
         />
         <Button
@@ -885,117 +1648,164 @@ export default function OrdersPage() {
         </Button>
       </div>
 
-      <div className='space-y-4 mb-20'>
-        {cargos.results.map((cargo) => (
-          <Card key={cargo.id} className='bg-white overflow-hidden'>
-            <CardContent className='p-4'>
-              <div className='flex justify-between items-start mb-2'>
-                <div className='flex space-x-1'>
-                  {cargo.owner.rating && cargo.owner.rating > 4 && (
-                    <Badge
-                      variant='secondary'
-                      className='bg-yellow-100 text-yellow-800'
-                      title='Высокий рейтинг'
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        onApply={handleApplyFilters}
+      />
+
+      {isLoading ? (
+        <div className='flex items-center justify-center h-64'>
+          <Loader2 className='h-8 w-8 animate-spin text-white' />
+        </div>
+      ) : (
+        <div className='space-y-4 mb-20'>
+          {filterParams.radius &&
+            (filterParams.loading_location ||
+              filterParams.unloading_location) && (
+              <div className='bg-white p-3 rounded-lg mb-2 text-sm'>
+                <Badge
+                  variant='secondary'
+                  className='bg-blue-100 text-blue-800'
+                >
+                  Поиск в радиусе {filterParams.radius} км
+                </Badge>
+                {filterParams.loading_location && (
+                  <span className='ml-2'>от точки погрузки</span>
+                )}
+                {filterParams.loading_location &&
+                  filterParams.unloading_location && <span> и </span>}
+                {filterParams.unloading_location && (
+                  <span>от точки выгрузки</span>
+                )}
+              </div>
+            )}
+
+          {cargos.results && cargos.results.length > 0 ? (
+            cargos.results.map((cargo) => (
+              <Card key={cargo.id} className='bg-white overflow-hidden'>
+                <CardContent className='p-4'>
+                  <div className='flex justify-between items-start mb-2'>
+                    <div className='flex space-x-1'>
+                      {cargo.owner &&
+                        cargo.owner.rating &&
+                        cargo.owner.rating > 4 && (
+                          <Badge
+                            variant='secondary'
+                            className='bg-yellow-100 text-yellow-800'
+                            title='Высокий рейтинг'
+                          >
+                            <Star className='h-4 w-4' />
+                          </Badge>
+                        )}
+                      {cargo.owner && cargo.owner.is_verified && (
+                        <Badge
+                          variant='secondary'
+                          className='bg-green-100 text-green-800'
+                          title='Профиль подтвержден'
+                        >
+                          <CheckCircle className='h-4 w-4' />
+                        </Badge>
+                      )}
+                    </div>
+                    <div className='flex items-center'>
+                      {cargo.owner && cargo.owner.rating && (
+                        <>
+                          <span className='font-bold mr-1'>
+                            {cargo.owner.rating}
+                          </span>
+                          <div className='flex'>
+                            {renderStars(cargo.owner.rating)}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className='flex justify-between items-center mb-2'>
+                    <span className='font-bold text-lg'>
+                      {cargo.loading_point} - {cargo.unloading_point}
+                    </span>
+                    <span className='text-sm text-gray-500'>
+                      {new Date(cargo.created_at).toLocaleString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
+                    <span>Груз: {cargo.title}</span>
+                    <span>Вес: {cargo.weight} т</span>
+                    <span>Тип: {cargo.vehicle_type}</span>
+                    <span>Оплата: {cargo.payment_method}</span>
+                  </div>
+
+                  <div className='mb-2'>
+                    <span className='font-semibold'>
+                      Цена: {cargo.price ? `${cargo.price} ₽` : 'Договорная'}
+                    </span>
+                  </div>
+
+                  {expandedOrder === cargo.id && (
+                    <div className='mt-4 text-sm'>
+                      <p>Описание: {cargo.description}</p>
+                      {cargo.volume && <p>Объем: {cargo.volume} м³</p>}
+                      <p>
+                        Дата загрузки:{' '}
+                        {new Date(cargo.loading_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className='flex justify-between mt-4'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='flex-1 mr-1'
+                      onClick={() => toggleOrderExpansion(cargo.id)}
                     >
-                      <Star className='h-4 w-4' />
-                    </Badge>
-                  )}
-                  {cargo.owner.is_verified && (
-                    <Badge
-                      variant='secondary'
-                      className='bg-green-100 text-green-800'
-                      title='Профиль подтвержден'
+                      {expandedOrder === cargo.id ? (
+                        <ChevronUp className='h-4 w-4 mr-1' />
+                      ) : (
+                        <ChevronDown className='h-4 w-4 mr-1' />
+                      )}
+                      {expandedOrder === cargo.id ? 'Скрыть' : 'Подробнее'}
+                    </Button>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='flex-1 ml-1 mr-1'
+                      onClick={() => handleNotificationToggle(cargo)}
                     >
-                      <CheckCircle className='h-4 w-4' />
-                    </Badge>
-                  )}
-                </div>
-                <div className='flex items-center'>
-                  {cargo.owner.rating && (
-                    <>
-                      <span className='font-bold mr-1'>
-                        {cargo.owner.rating}
-                      </span>
-                      <div className='flex'>
-                        {renderStars(cargo.owner.rating)}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className='flex justify-between items-center mb-2'>
-                <span className='font-bold text-lg'>
-                  {cargo.loading_point} - {cargo.unloading_point}
-                </span>
-                <span className='text-sm text-gray-500'>
-                  {new Date(cargo.created_at).toLocaleString()}
-                </span>
-              </div>
-
-              <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
-                <span>Груз: {cargo.title}</span>
-                <span>Вес: {cargo.weight} т</span>
-                <span>Тип: {cargo.vehicle_type}</span>
-                <span>Оплата: {cargo.payment_method}</span>
-              </div>
-
-              <div className='mb-2'>
-                <span className='font-semibold'>
-                  Цена: {cargo.price ? `${cargo.price} ₽` : 'Договорная'}
-                </span>
-              </div>
-
-              {expandedOrder === cargo.id && (
-                <div className='mt-4 text-sm'>
-                  <p>Описание: {cargo.description}</p>
-                  {cargo.volume && <p>Объем: {cargo.volume} м³</p>}
-                  <p>
-                    Дата загрузки:{' '}
-                    {new Date(cargo.loading_date).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-
-              <div className='flex justify-between mt-4'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='flex-1 mr-1'
-                  onClick={() => toggleOrderExpansion(cargo.id)}
-                >
-                  {expandedOrder === cargo.id ? (
-                    <ChevronUp className='h-4 w-4 mr-1' />
-                  ) : (
-                    <ChevronDown className='h-4 w-4 mr-1' />
-                  )}
-                  {expandedOrder === cargo.id ? 'Скрыть' : 'Подробнее'}
-                </Button>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='flex-1 ml-1 mr-1'
-                  onClick={() => handleNotificationToggle(cargo)}
-                >
-                  <Bell className='h-4 w-4 mr-1' />
-                </Button>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={`flex-1 ${
-                    isFavorite(Number(cargo.id))
-                      ? 'text-red-500 hover:text-red-600'
-                      : ''
-                  }`}
-                  onClick={() => handleFavoriteToggle(cargo)}
-                >
-                  <Heart className='h-4 w-4 mr-1' />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                      <Bell className='h-4 w-4 mr-1' />
+                    </Button>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className={`flex-1 ${
+                        isFavorite(Number(cargo.id))
+                          ? 'text-red-500 hover:text-red-600'
+                          : ''
+                      }`}
+                      onClick={() => handleFavoriteToggle(cargo)}
+                    >
+                      <Heart className='h-4 w-4 mr-1' />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className='bg-white p-6 rounded-lg text-center text-gray-600'>
+              Грузы не найдены. Попробуйте изменить параметры поиска.
+            </div>
+          )}
+        </div>
+      )}
 
       <Dialog
         open={showNotificationDialog}
@@ -1010,13 +1820,7 @@ export default function OrdersPage() {
             направлению и типу груза.
           </p>
           <div className='flex justify-end space-x-2 mt-4'>
-            <Button
-              variant='outline'
-              onClick={() => setShowNotificationDialog(false)}
-            >
-              Отмена
-            </Button>
-            <Button onClick={handleEnableNotification}>Включить</Button>
+            <Button onClick={() => setShowErrorDialog(false)}>Понятно</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -2,6 +2,19 @@ import axios, { AxiosInstance } from 'axios';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
+export interface Location {
+  id: number;
+  name: string;
+  level: number;
+  code?: string;
+  latitude?: number;
+  longitude?: number;
+  parent_name?: string;
+  country_name?: string;
+  full_name?: string;
+  additional_data?: Record<string, any>;
+}
+
 export class ApiClient {
   private static instance: ApiClient;
   private api: AxiosInstance;
@@ -164,8 +177,10 @@ export class ApiClient {
 
   public async createCargo(data: any) {
     try {
-      console.log(data, 'createcargodata')
-      const response = await this.api.post('/cargo/cargos/', data);
+      console.log(data, 'createcargodata');
+      const payload = { ...data };
+      console.log('sending cargo data:', payload);
+      const response = await this.api.post('/cargo/cargos/', payload);
       return response.data;
     } catch (error) {
       console.error('Create cargo error:', error);
@@ -408,15 +423,152 @@ export class ApiClient {
     }
   }
 
-  // public async updateCargo(id: string, data: any) {
-  //   try {
-  //     const response = await this.api.patch(`/cargo/${id}/`, data);
-  //     return response.data;
-  //   } catch (error) {
-  //     console.error('Update cargo error:', error);
-  //     throw error;
-  //   }
-  // }
+  public async searchLocations(query: string) {
+    try {
+      const response = await this.api.get<Location>('/core/locations/search/', {
+        params: { q: query },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('search locations error:', error);
+      throw error;
+    }
+  }
+
+  // Получение локации по ID
+  public async getLocation(id: number) {
+    try {
+      const response = await this.api.get<Location>(`/core/locations/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('get location error:', error);
+      throw error;
+    }
+  }
+
+  // Get states/regions for a country
+  public async getStates(countryId: number) {
+    try {
+      const response = await this.api.get(`/core/locations/states/`, {
+        params: { country_id: countryId },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching states:', error);
+      throw error;
+    }
+  }
+
+  // Get cities for a state or country
+  public async getCities(params: { state_id?: number; country_id?: number }) {
+    try {
+      const response = await this.api.get(`/core/locations/cities/`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      throw error;
+    }
+  }
+
+  // Find nearby location
+  public async getNearbyLocations(
+    lat: number,
+    lon: number,
+    radius: number = 100
+  ) {
+    try {
+      const response = await this.api.get(`/core/locations/nearest/`, {
+        params: { lat, lon, radius },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching nearby locations:', error);
+      throw error;
+    }
+  }
+
+  // Получение ближайших локаций
+  public async getNearestLocations(
+    lat: number,
+    lon: number,
+    radius: number = 100
+  ) {
+    try {
+      const response = await this.api.get<Location[]>(
+        '/core/locations/nearest/',
+        {
+          params: { lat, lon, radius },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('nearest location error:', error);
+      throw error;
+    }
+  }
+
+  // Получение стран
+  public async getCountries() {
+    try {
+      const response = await this.api.get<Location[]>(
+        '/core/locations/countries/'
+      );
+      return response.data;
+    } catch (error) {
+      console.error('get countries error:', error);
+      throw error;
+    }
+  }
+
+  // Получение регионов/штатов по стране
+  public async getStatesByCountry(countryId: number) {
+    try {
+      const response = await this.api.get<Location[]>(
+        '/core/locations/states/',
+        {
+          params: { country_id: countryId },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('get states error:', error);
+      throw error;
+    }
+  }
+
+  // Получение городов по региону/штату
+  public async getCitiesByState(stateId: number) {
+    try {
+      const response = await this.api.get<Location[]>(
+        '/core/locations/cities/',
+        {
+          params: { state_id: stateId },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('get cities by state error:', error);
+      throw error;
+    }
+  }
+
+  // Получение городов по стране
+  public async getCitiesByCountry(countryId: number) {
+    try {
+      const response = await this.api.get<Location[]>(
+        '/core/locations/cities/',
+        {
+          params: { country_id: countryId },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('get cities by country error:', error);
+      throw error;
+    }
+  }
 }
 
 export const api = ApiClient.getInstance();
