@@ -32,7 +32,7 @@ import {
   Truck,
   GraduationCap,
   Loader2,
-  Gamepad,
+  // Gamepad,
   FileIcon,
   Plus,
   Trash2Icon,
@@ -605,11 +605,11 @@ export default function MenuPage() {
       text: 'Отзывы',
       action: () => router.push('/reviews'),
     },
-    {
-      icon: Gamepad,
-      text: 'Игра',
-      action: () => router.push('/game'),
-    },
+    // {
+    //   icon: Gamepad,
+    //   text: 'Игра',
+    //   action: () => router.push('/game'),
+    // },
   ];
 
   if (isLoading) {
