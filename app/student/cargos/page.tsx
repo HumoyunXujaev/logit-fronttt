@@ -426,7 +426,7 @@ export default function StudentCargosPage() {
       <div className='max-w-6xl mx-auto'>
         <h1 className='text-2xl font-bold mb-6'>Доступные грузы</h1>
 
-        <div className='mb-6 space-y-4'>
+        {/* <div className='mb-6 space-y-4'>
           <div className='flex gap-4'>
             <Input
               placeholder='Поиск грузов...'
@@ -450,10 +450,11 @@ export default function StudentCargosPage() {
               <SelectTrigger className='w-[200px]'>
                 <SelectValue placeholder='Тип транспорта' />
               </SelectTrigger>
-              <SelectContent>{/* Add vehicle types */}</SelectContent>
-            </Select>
+              <SelectContent>{/* Add vehicle types */}
+        {/* </SelectContent> */}
+        {/* </Select> */}
 
-            <Button
+        {/* <Button
               variant='outline'
               onClick={() =>
                 setFilters({
@@ -466,7 +467,7 @@ export default function StudentCargosPage() {
               Сбросить фильтры
             </Button>
           </div>
-        </div>
+        </div> */}
 
         <div className='space-y-4'>
           {cargos?.results?.length === 0 ? (

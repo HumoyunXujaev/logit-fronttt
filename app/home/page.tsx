@@ -1033,7 +1033,928 @@
 //       />
 //     </div>
 //   );
+// // }
+// 'use client';
+
+// import React, { useState, useEffect, useRef } from 'react';
+// import { Input } from '@/components/ui/input';
+// import { Button } from '@/components/ui/button';
+// import { Card, CardContent } from '@/components/ui/card';
+// import { Badge } from '@/components/ui/badge';
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+// } from '@/components/ui/dialog';
+// import { Checkbox } from '@/components/ui/checkbox';
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from '@/components/ui/select';
+// import { ScrollArea } from '@/components/ui/scroll-area';
+// import { DateRange, Range, RangeKeyDict } from 'react-date-range';
+// import 'react-date-range/dist/styles.css';
+// import 'react-date-range/dist/theme/default.css';
+// import {
+//   Filter,
+//   Star,
+//   CheckCircle,
+//   Clock,
+//   Bell,
+//   Heart,
+//   ChevronDown,
+//   ChevronUp,
+//   X,
+//   Check,
+//   Loader2,
+// } from 'lucide-react';
+// import NavigationMenu from '../components/NavigationMenu';
+// import { useUser } from '@/contexts/UserContext';
+// import { useRouter } from 'next/navigation';
+// import { useApp } from '@/contexts/AppContext';
+// import { api } from '@/lib/api';
+// import { toast } from 'sonner';
+// import { cn } from '@/lib/utils';
+// import { Slider } from '@/components/ui/slider';
+
+// interface Location {
+//   id: string;
+//   name: string;
+//   full_name?: string;
+//   level?: number;
+//   parent_name?: string;
+//   country_name?: string;
+//   latitude?: number;
+//   longitude?: number;
 // }
+
+// interface FilterState {
+//   category: string;
+//   loading_location: { id: string; name: string };
+//   unloading_location: { id: string; name: string };
+//   vehicleType: string;
+//   dateRange: Range;
+//   notifications: boolean;
+//   radius: number; // Добавлено для радиуса поиска
+// }
+
+// interface CargoResponse {
+//   results: Cargo[];
+// }
+
+// interface Cargo {
+//   id: string;
+//   title: string;
+//   description: string;
+//   owner: {
+//     id: string;
+//     role: string;
+//     company_name?: string;
+//     full_name: string;
+//     rating?: number;
+//     is_verified?: boolean;
+//   };
+//   weight: number;
+//   volume?: number;
+//   loading_point: string;
+//   unloading_point: string;
+//   loading_location?: string;
+//   unloading_location?: string;
+//   loading_date: string;
+//   vehicle_type: string;
+//   payment_method: string;
+//   price?: number;
+//   status: string;
+//   created_at: string;
+// }
+
+// const cargoCategories = [
+//   'Металл',
+//   'Текстиль',
+//   'Продукты',
+//   'Техника',
+//   'Стройматериалы',
+// ];
+
+// const vehicleTypes = [
+//   'tent',
+//   'refrigerator',
+//   'isothermal',
+//   'container',
+//   'car_carrier',
+//   'board',
+// ];
+
+// const LocationSelector = ({
+//   value,
+//   onChange,
+//   placeholder,
+//   error,
+//   errorMessage,
+// }: {
+//   value: { id: string; name: string };
+//   onChange: (value: { id: string; name: string }) => void;
+//   placeholder: string;
+//   error?: boolean;
+//   errorMessage?: string;
+// }) => {
+//   const [open, setOpen] = useState(false);
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [locations, setLocations] = useState<Location[]>([]);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const containerRef = useRef<HTMLDivElement>(null);
+
+//   // Обработка клика вне компонента для закрытия выпадающего списка
+//   useEffect(() => {
+//     const handleClickOutside = (event: MouseEvent) => {
+//       if (
+//         containerRef.current &&
+//         !containerRef.current.contains(event.target as Node)
+//       ) {
+//         setOpen(false);
+//       }
+//     };
+
+//     document.addEventListener('mousedown', handleClickOutside);
+//     return () => {
+//       document.removeEventListener('mousedown', handleClickOutside);
+//     };
+//   }, []);
+
+//   // Поиск локаций при вводе
+//   useEffect(() => {
+//     if (searchQuery.length >= 2) {
+//       setIsLoading(true);
+//       setOpen(true); // Открываем список при вводе
+
+//       const timer = setTimeout(() => {
+//         api
+//           .searchLocations(searchQuery)
+//           .then((data) => {
+//             setLocations(Array.isArray(data) ? data : []);
+//             setIsLoading(false);
+//           })
+//           .catch((err) => {
+//             console.error('Search error:', err);
+//             setLocations([]);
+//             setIsLoading(false);
+//           });
+//       }, 300);
+
+//       return () => clearTimeout(timer);
+//     } else {
+//       setLocations([]);
+//       if (searchQuery.length === 0) {
+//         setOpen(false);
+//       }
+//     }
+//   }, [searchQuery]);
+
+//   const handleSelect = (location: Location) => {
+//     onChange({
+//       id: location.id,
+//       name: location.full_name || location.name,
+//     });
+//     setSearchQuery('');
+//     setOpen(false);
+//   };
+
+//   return (
+//     <div className='relative w-full' ref={containerRef}>
+//       <Input
+//         placeholder={placeholder}
+//         value={searchQuery}
+//         onChange={(e) => setSearchQuery(e.target.value)}
+//         onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+//         className={cn(error && 'border-red-500')}
+//       />
+
+//       {/* Показываем выбранное значение если оно есть и поиск пустой */}
+//       {value.name && searchQuery === '' && (
+//         <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
+//           {value.name}
+//         </div>
+//       )}
+
+//       {open && (
+//         <div className='absolute z-10 w-full mt-1 bg-white rounded-md border shadow-md'>
+//           <div className='p-1'>
+//             {isLoading ? (
+//               <div className='p-4 text-center text-sm text-muted-foreground'>
+//                 Загрузка...
+//               </div>
+//             ) : locations.length === 0 ? (
+//               <div className='p-4 text-center text-sm text-muted-foreground'>
+//                 {searchQuery.length < 2
+//                   ? 'Введите минимум 2 символа для поиска'
+//                   : 'Ничего не найдено'}
+//               </div>
+//             ) : (
+//               <ScrollArea className='h-[300px]'>
+//                 {locations.map((location) => (
+//                   <div
+//                     key={location.id}
+//                     onClick={() => handleSelect(location)}
+//                     className={cn(
+//                       'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
+//                       'hover:bg-blue-50'
+//                     )}
+//                   >
+//                     <div className='flex-1'>
+//                       <p className='text-sm font-medium'>
+//                         {location.name}
+//                         {location.level === 3 && location.parent_name && (
+//                           <span className='text-gray-500'>
+//                             {' - '}
+//                             {location.parent_name}
+//                           </span>
+//                         )}
+//                         {location.country_name && location.level !== 1 && (
+//                           <span className='text-gray-500'>
+//                             {', '}
+//                             {location.country_name}
+//                           </span>
+//                         )}
+//                       </p>
+//                       {location.full_name && (
+//                         <p className='text-xs text-gray-500'>
+//                           {location.full_name}
+//                         </p>
+//                       )}
+//                     </div>
+//                     {value.id === location.id && <Check className='h-4 w-4' />}
+//                   </div>
+//                 ))}
+//               </ScrollArea>
+//             )}
+//           </div>
+//         </div>
+//       )}
+
+//       {error && errorMessage && (
+//         <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+//       )}
+//     </div>
+//   );
+// };
+
+// const FilterModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onApply: (filters: any) => void;
+// }> = ({ isOpen, onClose, onApply }) => {
+//   const [filters, setFilters] = useState<FilterState>({
+//     category: '',
+//     loading_location: { id: '', name: '' },
+//     unloading_location: { id: '', name: '' },
+//     vehicleType: '',
+//     dateRange: {
+//       startDate: undefined,
+//       endDate: undefined,
+//       key: 'selection',
+//     },
+//     notifications: false,
+//     radius: 100, // Значение по умолчанию
+//   });
+
+//   const handleSelectChange = (name: string, value: string) => {
+//     setFilters((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleDateRangeChange = (ranges: RangeKeyDict) => {
+//     setFilters((prev) => ({ ...prev, dateRange: ranges.selection }));
+//   };
+
+//   const handleCheckboxChange = (checked: boolean) => {
+//     setFilters((prev) => ({ ...prev, notifications: checked }));
+//   };
+
+//   const handleRadiusChange = (value: number[]) => {
+//     setFilters((prev) => ({ ...prev, radius: value[0] }));
+//   };
+
+//   const handleApply = () => {
+//     onApply({
+//       category: filters.category,
+//       loading_location_id: filters.loading_location.id, // Изменено с loading_location
+//       unloading_location_id: filters.unloading_location.id, // Изменено с unloading_location
+//       vehicle_type: filters.vehicleType,
+//       date_from: filters.dateRange.startDate
+//         ? new Date(filters.dateRange.startDate).toISOString().split('T')[0]
+//         : undefined,
+//       date_to: filters.dateRange.endDate
+//         ? new Date(filters.dateRange.endDate).toISOString().split('T')[0]
+//         : undefined,
+//       notifications: filters.notifications,
+//       radius: filters.radius, // Добавляем радиус в фильтры
+//     });
+//     onClose();
+//   };
+
+//   return (
+//     <Dialog open={isOpen} onOpenChange={onClose}>
+//       <DialogContent className='bg-blue-600 text-white max-w-lg'>
+//         <DialogHeader>
+//           <DialogTitle className='text-white text-center'>
+//             Поиск грузов
+//           </DialogTitle>
+//         </DialogHeader>
+//         <ScrollArea className='pr-4 h-[70vh] max-h-[600px]'>
+//           <div className='space-y-4 px-1'>
+//             <Select
+//               onValueChange={(value) => handleSelectChange('category', value)}
+//             >
+//               <SelectTrigger className='bg-blue-500 text-white border-blue-400'>
+//                 <SelectValue placeholder='Категория грузов' />
+//               </SelectTrigger>
+//               <SelectContent>
+//                 {cargoCategories.map((category) => (
+//                   <SelectItem key={category} value={category}>
+//                     {category}
+//                   </SelectItem>
+//                 ))}
+//               </SelectContent>
+//             </Select>
+
+//             <Select
+//               onValueChange={(value) =>
+//                 handleSelectChange('vehicleType', value)
+//               }
+//             >
+//               <SelectTrigger className='bg-blue-500 text-white border-blue-400'>
+//                 <SelectValue placeholder='Тип транспорта' />
+//               </SelectTrigger>
+//               <SelectContent>
+//                 {vehicleTypes.map((type) => (
+//                   <SelectItem key={type} value={type}>
+//                     {type === 'tent'
+//                       ? 'Тент'
+//                       : type === 'refrigerator'
+//                       ? 'Рефрижератор'
+//                       : type === 'isothermal'
+//                       ? 'Изотерм'
+//                       : type === 'container'
+//                       ? 'Контейнер'
+//                       : type === 'car_carrier'
+//                       ? 'Автовоз'
+//                       : 'Борт'}
+//                   </SelectItem>
+//                 ))}
+//               </SelectContent>
+//             </Select>
+
+//             <div className='space-y-2'>
+//               <label className='text-white text-sm'>Откуда</label>
+//               <LocationSelector
+//                 value={filters.loading_location}
+//                 onChange={(value) =>
+//                   setFilters((prev) => ({
+//                     ...prev,
+//                     loading_location: value,
+//                   }))
+//                 }
+//                 placeholder='Выберите пункт погрузки'
+//               />
+//             </div>
+
+//             <div className='space-y-2'>
+//               <label className='text-white text-sm'>Куда</label>
+//               <LocationSelector
+//                 value={filters.unloading_location}
+//                 onChange={(value) =>
+//                   setFilters((prev) => ({
+//                     ...prev,
+//                     unloading_location: value,
+//                   }))
+//                 }
+//                 placeholder='Выберите пункт выгрузки'
+//               />
+//             </div>
+
+//             {/* Радиус поиска */}
+//             <div className='space-y-2'>
+//               <div className='flex justify-between items-center'>
+//                 <label className='text-white text-sm'>
+//                   Радиус поиска: {filters.radius} км
+//                 </label>
+//               </div>
+//               <Slider
+//                 defaultValue={[100]}
+//                 max={500}
+//                 min={0}
+//                 step={10}
+//                 value={[filters.radius]}
+//                 onValueChange={handleRadiusChange}
+//                 className='py-4'
+//               />
+//               <p className='text-xs text-blue-200'>
+//                 Поиск грузов в радиусе до {filters.radius} км от выбранных точек
+//               </p>
+//             </div>
+
+//             <div className='bg-white rounded-md p-2'>
+//               <DateRange
+//                 ranges={[filters.dateRange]}
+//                 onChange={handleDateRangeChange}
+//                 months={1}
+//                 direction='vertical'
+//                 className='w-full'
+//               />
+//             </div>
+
+//             <div className='flex items-center space-x-2'>
+//               <Checkbox
+//                 id='notifications'
+//                 checked={filters.notifications}
+//                 onCheckedChange={handleCheckboxChange}
+//               />
+//               <label htmlFor='notifications' className='text-white'>
+//                 Включить уведомления
+//               </label>
+//             </div>
+
+//             <Button
+//               onClick={handleApply}
+//               className='w-full bg-yellow-400 text-blue-800 hover:bg-yellow-500'
+//             >
+//               Найти грузы
+//             </Button>
+//           </div>
+//         </ScrollArea>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// };
+
+// export default function OrdersPage() {
+//   const [searchTerm, setSearchTerm] = useState('');
+//   const [cargos, setCargos] = useState<CargoResponse>({ results: [] });
+//   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+//   const [showNotificationDialog, setShowNotificationDialog] = useState(false);
+//   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [currentCargo, setCurrentCargo] = useState<Cargo | null>(null);
+//   const [filterParams, setFilterParams] = useState<any>({});
+//   const [showErrorDialog, setShowErrorDialog] = useState(false);
+//   const [errorMessage, setErrorMessage] = useState('');
+
+//   const { userState } = useUser();
+//   const router = useRouter();
+//   const {
+//     addNotification,
+//     addToFavorites,
+//     removeFromFavorites,
+//     isFavorite,
+//     notifications,
+//   } = useApp();
+
+//   useEffect(() => {
+//     fetchCargos();
+//   }, [searchTerm, filterParams]);
+
+//   // const fetchCargos = async () => {
+//   //   try {
+//   //     setIsLoading(true);
+//   //     console.log(searchTerm, 'searchterm');
+//   //     console.log(filterParams, 'filterparams');
+//   //     const response = await api.getCargos({
+//   //       search: searchTerm,
+//   //       ...filterParams,
+//   //     });
+//   //     setCargos(response);
+//   //     console.log(response, 'res');
+//   //   } catch (error) {
+//   //     toast.error('Ошибка при загрузке грузов');
+//   //     console.error('Fetch cargos error:', error);
+//   //   } finally {
+//   //     setIsLoading(false);
+//   //   }
+//   // };
+//   // Also modify the fetchCargos function to use different approaches based on whether filters are active
+//   const fetchCargos = async () => {
+//     try {
+//       setIsLoading(true);
+
+//       // If we have active filters, use searchCargo
+//       if (Object.keys(filterParams).length > 0) {
+//         const queryParams = {
+//           search: searchTerm,
+//           ...filterParams,
+//         };
+//         const response = await api.searchCargo(queryParams);
+//         setCargos(response);
+//       } else {
+//         // Otherwise use the regular getCargos API
+//         const response = await api.getCargos({ search: searchTerm });
+//         setCargos(response);
+//       }
+
+//       console.log('Cargo response:', cargos);
+//     } catch (error) {
+//       toast.error('Ошибка при загрузке грузов');
+//       console.error('Fetch cargos error:', error);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   // Update the handleSearch function to use the appropriate API based on filter state
+//   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const newSearchTerm = e.target.value;
+//     setSearchTerm(newSearchTerm);
+
+//     // Debounce search to avoid too many API calls
+//     if (searchTimeout.current) {
+//       clearTimeout(searchTimeout.current);
+//     }
+
+//     searchTimeout.current = setTimeout(() => {
+//       setIsLoading(true);
+
+//       // If we have active filters, use searchCargo with combined parameters
+//       if (Object.keys(filterParams).length > 0) {
+//         const queryParams = {
+//           search: newSearchTerm,
+//           ...filterParams,
+//         };
+
+//         api
+//           .searchCargo(queryParams)
+//           .then((response) => {
+//             setCargos(response);
+//             console.log('Search results with filters:', response);
+//           })
+//           .catch((error) => {
+//             toast.error('Ошибка при поиске грузов');
+//             console.error('Search error:', error);
+//           })
+//           .finally(() => {
+//             setIsLoading(false);
+//           });
+//       } else {
+//         // Otherwise use the regular getCargos API
+//         api
+//           .getCargos({ search: newSearchTerm })
+//           .then((response) => {
+//             setCargos(response);
+//             console.log('Search results:', response);
+//           })
+//           .catch((error) => {
+//             toast.error('Ошибка при поиске грузов');
+//             console.error('Search error:', error);
+//           })
+//           .finally(() => {
+//             setIsLoading(false);
+//           });
+//       }
+//     }, 300); // 300ms debounce
+//   };
+
+//   // Add this to the component's state
+//   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+//   const handleApplyFilters = async (filters: any) => {
+//     console.log('Applied filters:', filters);
+//     setIsLoading(true);
+
+//     try {
+//       // Create a combined query object with both search term and filters
+//       const queryParams = {
+//         search: searchTerm, // Include the current search term
+//         ...filters, // Include all filter parameters
+//       };
+
+//       // Use searchCargo API with the combined parameters
+//       const response = await api.searchCargo(queryParams);
+//       setCargos(response);
+//       console.log('Filtered results:', response);
+
+//       // Store the filters in state (but don't trigger another fetch)
+//       setFilterParams(filters);
+
+//       // If notifications are enabled, add a notification for the filter
+//       if (filters.notifications) {
+//         const notificationMessage = `Включены уведомления для поиска: ${
+//           filters.category ? `${filters.category}, ` : ''
+//         }${
+//           filters.loading_location_id ? `Из: ${filters.loading_location}, ` : ''
+//         }${
+//           filters.unloading_location_id
+//             ? `В: ${filters.unloading_location}`
+//             : ''
+//         }${filters.radius ? `, Радиус: ${filters.radius} км` : ''}`;
+
+//         addNotification({
+//           orderId: Date.now(), // Use timestamp as ID
+//           type: 'filter',
+//           message: notificationMessage,
+//         });
+//         toast.success('Уведомления о новых грузах включены');
+//       }
+//     } catch (error) {
+//       toast.error('Ошибка при поиске грузов');
+//       console.error('Search cargo error:', error);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+//   // const handleApplyFilters = (filters: any) => {
+//   //   console.log('Applied filters:', filters);
+//   //   setFilterParams(filters);
+
+//   //   // If notifications are enabled, add a notification for the filter
+//   //   if (filters.notifications) {
+//   //     const notificationMessage = `Включены уведомления для поиска: ${
+//   //       filters.category ? `${filters.category}, ` : ''
+//   //     }${filters.loading_location ? `Из: ${filters.loading_location}, ` : ''}${
+//   //       filters.unloading_location ? `В: ${filters.unloading_location}` : ''
+//   //     }${filters.radius ? `, Радиус: ${filters.radius} км` : ''}`;
+
+//   //     addNotification({
+//   //       orderId: Date.now(), // Use timestamp as ID
+//   //       type: 'filter',
+//   //       message: notificationMessage,
+//   //     });
+
+//   //     toast.success('Уведомления о новых грузах включены');
+//   //   }
+//   // };
+
+//   const handleNotificationToggle = (cargo: Cargo) => {
+//     if (
+//       notifications.some(
+//         (notification) =>
+//           notification.orderId === Number(cargo.id) && !notification.isRead
+//       )
+//     ) {
+//       setErrorMessage('Для этого груза уже включены нотификации');
+//       setShowErrorDialog(true);
+//       return;
+//     }
+//     setCurrentCargo(cargo);
+//     setShowNotificationDialog(true);
+//   };
+
+//   const handleEnableNotification = () => {
+//     if (currentCargo) {
+//       addNotification({
+//         orderId: Number(currentCargo.id),
+//         type: 'cargo',
+//         message: `Включены уведомления для груза: ${currentCargo.title} (${currentCargo.loading_point} - ${currentCargo.unloading_point})`,
+//       });
+//       setShowNotificationDialog(false);
+//       toast.success('Уведомления включены');
+//     }
+//   };
+
+//   const handleFavoriteToggle = (cargo: Cargo) => {
+//     if (isFavorite(Number(cargo.id))) {
+//       removeFromFavorites(Number(cargo.id));
+//       toast.success('Груз удален из избранного');
+//     } else {
+//       addToFavorites({
+//         orderId: Number(cargo.id),
+//         type: cargo.vehicle_type,
+//         title: `${cargo.title}: ${cargo.loading_point} - ${cargo.unloading_point}`,
+//         description: cargo.description,
+//         details: {
+//           Вес: `${cargo.weight} т`,
+//           Объем: cargo.volume ? `${cargo.volume} м³` : 'Не указан',
+//           'Тип транспорта': cargo.vehicle_type,
+//           Оплата: cargo.payment_method,
+//           Цена: cargo.price ? `${cargo.price} ₽` : 'Договорная',
+//         },
+//       });
+//       toast.success('Груз добавлен в избранное');
+//     }
+//   };
+
+//   const renderStars = (rating: number = 0) => {
+//     return Array(5)
+//       .fill(0)
+//       .map((_, i) => (
+//         <Star
+//           key={i}
+//           className={`h-4 w-4 ${
+//             i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+//           }`}
+//         />
+//       ));
+//   };
+
+//   const toggleOrderExpansion = (orderId: string) => {
+//     setExpandedOrder(expandedOrder === orderId ? null : orderId);
+//   };
+
+//   return (
+//     <div className='min-h-screen bg-blue-600 p-4 pb-20'>
+//       <div className='flex items-center mb-4 bg-white rounded-lg p-2'>
+//         <Input
+//           type='text'
+//           placeholder='Поиск заказов...'
+//           value={searchTerm}
+//           onChange={handleSearch}
+//           className='mr-2 flex-grow'
+//         />
+//         <Button
+//           variant='default'
+//           size='sm'
+//           className='bg-yellow-400 text-black hover:bg-yellow-500 whitespace-nowrap'
+//           onClick={() => setIsFilterModalOpen(true)}
+//         >
+//           <Filter className='h-4 w-4 mr-2' />
+//           Фильтры
+//         </Button>
+//       </div>
+
+//       <FilterModal
+//         isOpen={isFilterModalOpen}
+//         onClose={() => setIsFilterModalOpen(false)}
+//         onApply={handleApplyFilters}
+//       />
+
+//       {isLoading ? (
+//         <div className='flex items-center justify-center h-64'>
+//           <Loader2 className='h-8 w-8 animate-spin text-white' />
+//         </div>
+//       ) : (
+//         <div className='space-y-4 mb-20'>
+//           {filterParams.radius &&
+//             (filterParams.loading_location ||
+//               filterParams.unloading_location) && (
+//               <div className='bg-white p-3 rounded-lg mb-2 text-sm'>
+//                 <Badge
+//                   variant='secondary'
+//                   className='bg-blue-100 text-blue-800'
+//                 >
+//                   Поиск в радиусе {filterParams.radius} км
+//                 </Badge>
+//                 {filterParams.loading_location && (
+//                   <span className='ml-2'>от точки погрузки</span>
+//                 )}
+//                 {filterParams.loading_location &&
+//                   filterParams.unloading_location && <span> и </span>}
+//                 {filterParams.unloading_location && (
+//                   <span>от точки выгрузки</span>
+//                 )}
+//               </div>
+//             )}
+
+//           {cargos.results && cargos.results.length > 0 ? (
+//             cargos.results.map((cargo) => (
+//               <Card key={cargo.id} className='bg-white overflow-hidden'>
+//                 <CardContent className='p-4'>
+//                   <div className='flex justify-between items-start mb-2'>
+//                     <div className='flex space-x-1'>
+//                       {cargo.owner &&
+//                         cargo.owner.rating &&
+//                         cargo.owner.rating > 4 && (
+//                           <Badge
+//                             variant='secondary'
+//                             className='bg-yellow-100 text-yellow-800'
+//                             title='Высокий рейтинг'
+//                           >
+//                             <Star className='h-4 w-4' />
+//                           </Badge>
+//                         )}
+//                       {cargo.owner && cargo.owner.is_verified && (
+//                         <Badge
+//                           variant='secondary'
+//                           className='bg-green-100 text-green-800'
+//                           title='Профиль подтвержден'
+//                         >
+//                           <CheckCircle className='h-4 w-4' />
+//                         </Badge>
+//                       )}
+//                     </div>
+//                     <div className='flex items-center'>
+//                       {cargo.owner && cargo.owner.rating && (
+//                         <>
+//                           <span className='font-bold mr-1'>
+//                             {cargo.owner.rating}
+//                           </span>
+//                           <div className='flex'>
+//                             {renderStars(cargo.owner.rating)}
+//                           </div>
+//                         </>
+//                       )}
+//                     </div>
+//                   </div>
+
+//                   <div className='flex justify-between items-center mb-2'>
+//                     <span className='font-bold text-lg'>
+//                       {cargo.loading_point} - {cargo.unloading_point}
+//                     </span>
+//                     <span className='text-sm text-gray-500'>
+//                       {new Date(cargo.created_at).toLocaleString('ru-RU', {
+//                         day: '2-digit',
+//                         month: '2-digit',
+//                         year: 'numeric',
+//                         hour: '2-digit',
+//                         minute: '2-digit',
+//                       })}
+//                     </span>
+//                   </div>
+
+//                   <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
+//                     <span>Груз: {cargo.title}</span>
+//                     <span>Вес: {cargo.weight} т</span>
+//                     <span>Тип: {cargo.vehicle_type}</span>
+//                     <span>Оплата: {cargo.payment_method}</span>
+//                   </div>
+
+//                   <div className='mb-2'>
+//                     <span className='font-semibold'>
+//                       Цена: {cargo.price ? `${cargo.price} ₽` : 'Договорная'}
+//                     </span>
+//                   </div>
+
+//                   {expandedOrder === cargo.id && (
+//                     <div className='mt-4 text-sm'>
+//                       <p>Описание: {cargo.description}</p>
+//                       {cargo.volume && <p>Объем: {cargo.volume} м³</p>}
+//                       <p>
+//                         Дата загрузки:{' '}
+//                         {new Date(cargo.loading_date).toLocaleDateString()}
+//                       </p>
+//                     </div>
+//                   )}
+
+//                   <div className='flex justify-between mt-4'>
+//                     <Button
+//                       variant='outline'
+//                       size='sm'
+//                       className='flex-1 mr-1'
+//                       onClick={() => toggleOrderExpansion(cargo.id)}
+//                     >
+//                       {expandedOrder === cargo.id ? (
+//                         <ChevronUp className='h-4 w-4 mr-1' />
+//                       ) : (
+//                         <ChevronDown className='h-4 w-4 mr-1' />
+//                       )}
+//                       {expandedOrder === cargo.id ? 'Скрыть' : 'Подробнее'}
+//                     </Button>
+//                     <Button
+//                       variant='outline'
+//                       size='sm'
+//                       className='flex-1 ml-1 mr-1'
+//                       onClick={() => handleNotificationToggle(cargo)}
+//                     >
+//                       <Bell className='h-4 w-4 mr-1' />
+//                     </Button>
+//                     <Button
+//                       variant='outline'
+//                       size='sm'
+//                       className={`flex-1 ${
+//                         isFavorite(Number(cargo.id))
+//                           ? 'text-red-500 hover:text-red-600'
+//                           : ''
+//                       }`}
+//                       onClick={() => handleFavoriteToggle(cargo)}
+//                     >
+//                       <Heart className='h-4 w-4 mr-1' />
+//                     </Button>
+//                   </div>
+//                 </CardContent>
+//               </Card>
+//             ))
+//           ) : (
+//             <div className='bg-white p-6 rounded-lg text-center text-gray-600'>
+//               Грузы не найдены. Попробуйте изменить параметры поиска.
+//             </div>
+//           )}
+//         </div>
+//       )}
+
+//       <Dialog
+//         open={showNotificationDialog}
+//         onOpenChange={setShowNotificationDialog}
+//       >
+//         <DialogContent>
+//           <DialogHeader>
+//             <DialogTitle>Включить уведомления?</DialogTitle>
+//           </DialogHeader>
+//           <p>
+//             Вы будете получать уведомления о новых предложениях по этому
+//             направлению и типу груза.
+//           </p>
+//           <div className='flex justify-end space-x-2 mt-4'>
+//             <Button onClick={() => setShowErrorDialog(false)}>Понятно</Button>
+//           </div>
+//         </DialogContent>
+//       </Dialog>
+
+//       <NavigationMenu
+//         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
+//       />
+//     </div>
+//   );
+// }
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -1046,6 +1967,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -1075,11 +1997,10 @@ import {
 import NavigationMenu from '../components/NavigationMenu';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
-import { useApp } from '@/contexts/AppContext';
-import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
+import { api } from '@/lib/api';
 
 interface Location {
   id: string;
@@ -1093,17 +2014,21 @@ interface Location {
 }
 
 interface FilterState {
-  category: string;
   loading_location: { id: string; name: string };
   unloading_location: { id: string; name: string };
-  vehicleType: string;
+  vehicle_type: string;
   dateRange: Range;
   notifications: boolean;
-  radius: number; // Добавлено для радиуса поиска
+  radius: number;
+  weight_min?: number;
+  weight_max?: number;
 }
 
 interface CargoResponse {
   results: Cargo[];
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
 }
 
 interface Cargo {
@@ -1132,22 +2057,26 @@ interface Cargo {
   created_at: string;
 }
 
-const cargoCategories = [
-  'Металл',
-  'Текстиль',
-  'Продукты',
-  'Техника',
-  'Стройматериалы',
-];
+interface SearchFilterSubscription {
+  id: string;
+  name: string;
+  filter_data: any;
+  notifications_enabled: boolean;
+}
 
 const vehicleTypes = [
-  'tent',
-  'refrigerator',
-  'isothermal',
-  'container',
-  'car_carrier',
-  'board',
+  { value: 'tent', label: 'Тент' },
+  { value: 'refrigerator', label: 'Рефрижератор' },
+  { value: 'isothermal', label: 'Изотерм' },
+  { value: 'container', label: 'Контейнер' },
+  { value: 'car_carrier', label: 'Автовоз' },
+  { value: 'board', label: 'Борт' },
 ];
+
+const getVehicleTypeLabel = (value: string): string => {
+  const vehicleType = vehicleTypes.find((vt) => vt.value === value);
+  return vehicleType ? vehicleType.label : value;
+};
 
 const LocationSelector = ({
   value,
@@ -1168,7 +2097,7 @@ const LocationSelector = ({
   const [isLoading, setIsLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Обработка клика вне компонента для закрытия выпадающего списка
+  // Handle outside click to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -1185,11 +2114,11 @@ const LocationSelector = ({
     };
   }, []);
 
-  // Поиск локаций при вводе
+  // Search locations when typing
   useEffect(() => {
     if (searchQuery.length >= 2) {
       setIsLoading(true);
-      setOpen(true); // Открываем список при вводе
+      setOpen(true);
 
       const timer = setTimeout(() => {
         api
@@ -1199,7 +2128,7 @@ const LocationSelector = ({
             setIsLoading(false);
           })
           .catch((err) => {
-            console.error('Search error:', err);
+            console.error('Search location error:', err);
             setLocations([]);
             setIsLoading(false);
           });
@@ -1223,22 +2152,39 @@ const LocationSelector = ({
     setOpen(false);
   };
 
+  const clearSelection = () => {
+    onChange({ id: '', name: '' });
+    setSearchQuery('');
+  };
+
   return (
     <div className='relative w-full' ref={containerRef}>
-      <Input
-        placeholder={placeholder}
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        onFocus={() => searchQuery.length >= 2 && setOpen(true)}
-        className={cn(error && 'border-red-500')}
-      />
+      <div className='relative'>
+        <Input
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+          className={cn(error && 'border-red-500')}
+        />
 
-      {/* Показываем выбранное значение если оно есть и поиск пустой */}
-      {value.name && searchQuery === '' && (
-        <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
-          {value.name}
-        </div>
-      )}
+        {/* Show selected value */}
+        {value.name && searchQuery === '' && (
+          <div className='absolute right-8 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
+            {value.name}
+          </div>
+        )}
+
+        {/* Clear button */}
+        {value.name && searchQuery === '' && (
+          <button
+            onClick={clearSelection}
+            className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600'
+          >
+            <X className='h-4 w-4' />
+          </button>
+        )}
+      </div>
 
       {open && (
         <div className='absolute z-10 w-full mt-1 bg-white rounded-md border shadow-md'>
@@ -1306,20 +2252,36 @@ const FilterModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onApply: (filters: any) => void;
-}> = ({ isOpen, onClose, onApply }) => {
+  initialFilters?: any;
+}> = ({ isOpen, onClose, onApply, initialFilters }) => {
   const [filters, setFilters] = useState<FilterState>({
-    category: '',
     loading_location: { id: '', name: '' },
     unloading_location: { id: '', name: '' },
-    vehicleType: '',
+    vehicle_type: '',
     dateRange: {
       startDate: undefined,
       endDate: undefined,
       key: 'selection',
     },
     notifications: false,
-    radius: 100, // Значение по умолчанию
+    radius: 100,
+    weight_min: undefined,
+    weight_max: undefined,
   });
+
+  const [filterName, setFilterName] = useState('');
+  const [saveFilter, setSaveFilter] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Initialize with existing filters if provided
+  useEffect(() => {
+    if (initialFilters) {
+      setFilters((prev) => ({
+        ...prev,
+        ...initialFilters,
+      }));
+    }
+  }, [initialFilters, isOpen]);
 
   const handleSelectChange = (name: string, value: string) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -1331,26 +2293,94 @@ const FilterModal: React.FC<{
 
   const handleCheckboxChange = (checked: boolean) => {
     setFilters((prev) => ({ ...prev, notifications: checked }));
+
+    // If enabling notifications, also enable saving filter
+    if (checked) {
+      setSaveFilter(true);
+    }
   };
 
   const handleRadiusChange = (value: number[]) => {
     setFilters((prev) => ({ ...prev, radius: value[0] }));
   };
 
-  const handleApply = () => {
-    onApply({
-      category: filters.category,
-      loading_location_id: filters.loading_location.id, // Изменено с loading_location
-      unloading_location_id: filters.unloading_location.id, // Изменено с unloading_location
-      vehicle_type: filters.vehicleType,
+  const handleWeightChange = (type: 'min' | 'max', value: string) => {
+    const numValue = value ? Number(value) : undefined;
+    setFilters((prev) => ({
+      ...prev,
+      [type === 'min' ? 'weight_min' : 'weight_max']: numValue,
+    }));
+  };
+
+  const validateFilters = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Validate filter name if saving
+    if (saveFilter && !filterName.trim()) {
+      newErrors.filterName = 'Введите название фильтра';
+    }
+
+    // Validate at least one main filter is set
+    if (
+      !filters.loading_location.id &&
+      !filters.unloading_location.id &&
+      !filters.vehicle_type
+    ) {
+      newErrors.general = 'Укажите хотя бы один критерий фильтрации';
+    }
+
+    // Validate weight range if both values are provided
+    if (
+      filters.weight_min !== undefined &&
+      filters.weight_max !== undefined &&
+      filters.weight_min > filters.weight_max
+    ) {
+      newErrors.weight = 'Минимальный вес не может быть больше максимального';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleApply = async () => {
+    if (!validateFilters()) {
+      return;
+    }
+
+    // Prepare filter data
+    const filterData = {
+      loading_location_id: filters.loading_location.id || undefined,
+      unloading_location_id: filters.unloading_location.id || undefined,
+      vehicle_type: filters.vehicle_type || undefined,
       date_from: filters.dateRange.startDate
         ? new Date(filters.dateRange.startDate).toISOString().split('T')[0]
         : undefined,
       date_to: filters.dateRange.endDate
         ? new Date(filters.dateRange.endDate).toISOString().split('T')[0]
         : undefined,
+      radius: filters.radius,
+      min_weight: filters.weight_min,
+      max_weight: filters.weight_max,
+    };
+
+    // If saving filter with notifications, create search filter in backend
+    if (saveFilter && filters.notifications) {
+      try {
+        await api.post('/core/search-filters/', {
+          name: filterName,
+          filter_data: filterData,
+          notifications_enabled: true,
+        });
+        toast.success('Фильтр сохранен с уведомлениями');
+      } catch (error) {
+        console.error('Error saving filter:', error);
+        toast.error('Ошибка при сохранении фильтра');
+      }
+    }
+
+    onApply({
+      ...filterData,
       notifications: filters.notifications,
-      radius: filters.radius, // Добавляем радиус в фильтры
     });
     onClose();
   };
@@ -1365,24 +2395,16 @@ const FilterModal: React.FC<{
         </DialogHeader>
         <ScrollArea className='pr-4 h-[70vh] max-h-[600px]'>
           <div className='space-y-4 px-1'>
-            <Select
-              onValueChange={(value) => handleSelectChange('category', value)}
-            >
-              <SelectTrigger className='bg-blue-500 text-white border-blue-400'>
-                <SelectValue placeholder='Категория грузов' />
-              </SelectTrigger>
-              <SelectContent>
-                {cargoCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {errors.general && (
+              <div className='bg-red-500 text-white p-2 rounded text-sm'>
+                {errors.general}
+              </div>
+            )}
 
             <Select
+              value={filters.vehicle_type}
               onValueChange={(value) =>
-                handleSelectChange('vehicleType', value)
+                handleSelectChange('vehicle_type', value)
               }
             >
               <SelectTrigger className='bg-blue-500 text-white border-blue-400'>
@@ -1390,18 +2412,8 @@ const FilterModal: React.FC<{
               </SelectTrigger>
               <SelectContent>
                 {vehicleTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type === 'tent'
-                      ? 'Тент'
-                      : type === 'refrigerator'
-                      ? 'Рефрижератор'
-                      : type === 'isothermal'
-                      ? 'Изотерм'
-                      : type === 'container'
-                      ? 'Контейнер'
-                      : type === 'car_carrier'
-                      ? 'Автовоз'
-                      : 'Борт'}
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1435,7 +2447,36 @@ const FilterModal: React.FC<{
               />
             </div>
 
-            {/* Радиус поиска */}
+            {/* Weight range */}
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='space-y-2'>
+                <label className='text-white text-sm'>Вес от (т)</label>
+                <Input
+                  type='number'
+                  min='0'
+                  placeholder='Минимум'
+                  value={filters.weight_min || ''}
+                  onChange={(e) => handleWeightChange('min', e.target.value)}
+                  className='bg-blue-500 text-white border-blue-400 placeholder:text-blue-300'
+                />
+              </div>
+              <div className='space-y-2'>
+                <label className='text-white text-sm'>Вес до (т)</label>
+                <Input
+                  type='number'
+                  min='0'
+                  placeholder='Максимум'
+                  value={filters.weight_max || ''}
+                  onChange={(e) => handleWeightChange('max', e.target.value)}
+                  className='bg-blue-500 text-white border-blue-400 placeholder:text-blue-300'
+                />
+              </div>
+            </div>
+            {errors.weight && (
+              <div className='text-yellow-300 text-sm'>{errors.weight}</div>
+            )}
+
+            {/* Radius search */}
             <div className='space-y-2'>
               <div className='flex justify-between items-center'>
                 <label className='text-white text-sm'>
@@ -1473,15 +2514,49 @@ const FilterModal: React.FC<{
                 onCheckedChange={handleCheckboxChange}
               />
               <label htmlFor='notifications' className='text-white'>
-                Включить уведомления
+                Включить уведомления о новых грузах
               </label>
             </div>
+
+            {filters.notifications && (
+              <div className='space-y-2'>
+                <div className='flex items-center space-x-2 mb-2'>
+                  <Checkbox
+                    id='saveFilter'
+                    checked={saveFilter}
+                    onCheckedChange={(checked) => setSaveFilter(!!checked)}
+                  />
+                  <label htmlFor='saveFilter' className='text-white'>
+                    Сохранить фильтр
+                  </label>
+                </div>
+
+                {saveFilter && (
+                  <div>
+                    <Input
+                      placeholder='Название фильтра'
+                      value={filterName}
+                      onChange={(e) => setFilterName(e.target.value)}
+                      className={cn(
+                        'bg-blue-500 border-blue-400 text-white placeholder:text-blue-300',
+                        errors.filterName && 'border-red-400'
+                      )}
+                    />
+                    {errors.filterName && (
+                      <p className='text-yellow-300 text-sm mt-1'>
+                        {errors.filterName}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <Button
               onClick={handleApply}
               className='w-full bg-yellow-400 text-blue-800 hover:bg-yellow-500'
             >
-              Найти грузы
+              Применить фильтр
             </Button>
           </div>
         </ScrollArea>
@@ -1490,7 +2565,7 @@ const FilterModal: React.FC<{
   );
 };
 
-export default function OrdersPage() {
+const OrdersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cargos, setCargos] = useState<CargoResponse>({ results: [] });
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -1499,117 +2574,207 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentCargo, setCurrentCargo] = useState<Cargo | null>(null);
   const [filterParams, setFilterParams] = useState<any>({});
-  const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
+  const [nextPage, setNextPage] = useState<string | null>(null);
 
   const { userState } = useUser();
   const router = useRouter();
-  const {
-    addNotification,
-    addToFavorites,
-    removeFromFavorites,
-    isFavorite,
-    notifications,
-  } = useApp();
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
 
+  // Load favorites on mount
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const response = await api.getFavorites();
+        const favoriteIds =
+          response.results?.map((fav: any) => Number(fav.object_id)) || [];
+        setFavorites(favoriteIds);
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
+  // Fetch cargos on mount and when search/filters change
   useEffect(() => {
     fetchCargos();
   }, [searchTerm, filterParams]);
 
-  const fetchCargos = async () => {
+  // Function to fetch cargos from API
+  const fetchCargos = async (resetResults = true) => {
     try {
-      setIsLoading(true);
-      console.log(searchTerm, 'searchterm');
-      console.log(filterParams, 'filterparams');
-      const response = await api.getCargos({
+      setIsLoading(resetResults);
+
+      // Prepare query params
+      const params = {
         search: searchTerm,
         ...filterParams,
-      });
-      setCargos(response);
-      console.log(response, 'res')
+      };
+
+      // Use search endpoint if we have active filters
+      let response;
+      if (Object.keys(filterParams).length > 0) {
+        response = await api.searchCargo(params);
+      } else {
+        response = await api.getCargos(params);
+      }
+
+      // Update state with results
+      if (resetResults) {
+        setCargos(response);
+      } else {
+        setCargos((prev) => ({
+          ...response,
+          results: [...prev.results, ...response.results],
+        }));
+      }
+
+      // Store next page URL if pagination is available
+      setNextPage(response.next);
     } catch (error) {
       toast.error('Ошибка при загрузке грузов');
       console.error('Fetch cargos error:', error);
     } finally {
       setIsLoading(false);
+      setIsMoreLoading(false);
     }
   };
 
+  // Load more results when user scrolls to bottom
+  const loadMoreResults = async () => {
+    if (!nextPage || isMoreLoading) return;
+
+    setIsMoreLoading(true);
+    try {
+      const response = await fetch(nextPage);
+      const data = await response.json();
+
+      setCargos((prev) => ({
+        ...data,
+        results: [...prev.results, ...data.results],
+      }));
+
+      setNextPage(data.next);
+    } catch (error) {
+      toast.error('Ошибка при загрузке дополнительных результатов');
+      console.error('Load more error:', error);
+    } finally {
+      setIsMoreLoading(false);
+    }
+  };
+
+  // Handle search input
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+
+    // Debounce search requests
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    searchTimeout.current = setTimeout(() => {
+      setFilterParams((prev: any) => ({
+        ...prev,
+        search: newSearchTerm,
+      }));
+    }, 500);
   };
 
-  const handleApplyFilters = (filters: any) => {
+  // Apply filters from filter modal
+  const handleApplyFilters = async (filters: any) => {
     console.log('Applied filters:', filters);
+    setIsLoading(true);
+
+    // Update active filters list for UI
+    const newActiveFilters = [];
+    if (filters.loading_location_id) newActiveFilters.push('Откуда');
+    if (filters.unloading_location_id) newActiveFilters.push('Куда');
+    if (filters.vehicle_type) newActiveFilters.push('Тип');
+    if (filters.date_from || filters.date_to) newActiveFilters.push('Даты');
+    if (filters.min_weight || filters.max_weight) newActiveFilters.push('Вес');
+
+    setActiveFilters(newActiveFilters);
     setFilterParams(filters);
-
-    // If notifications are enabled, add a notification for the filter
-    if (filters.notifications) {
-      const notificationMessage = `Включены уведомления для поиска: ${
-        filters.category ? `${filters.category}, ` : ''
-      }${filters.loading_location ? `Из: ${filters.loading_location}, ` : ''}${
-        filters.unloading_location ? `В: ${filters.unloading_location}` : ''
-      }${filters.radius ? `, Радиус: ${filters.radius} км` : ''}`;
-
-      addNotification({
-        orderId: Date.now(), // Use timestamp as ID
-        type: 'filter',
-        message: notificationMessage,
-      });
-
-      toast.success('Уведомления о новых грузах включены');
-    }
   };
 
+  // Reset all filters
+  const clearFilters = () => {
+    setFilterParams({});
+    setActiveFilters([]);
+    toast.info('Фильтры сброшены');
+  };
+
+  // Subscribe to cargo notifications
   const handleNotificationToggle = (cargo: Cargo) => {
-    if (
-      notifications.some(
-        (notification) =>
-          notification.orderId === Number(cargo.id) && !notification.isRead
-      )
-    ) {
-      setErrorMessage('Для этого груза уже включены нотификации');
-      setShowErrorDialog(true);
-      return;
-    }
     setCurrentCargo(cargo);
     setShowNotificationDialog(true);
   };
 
-  const handleEnableNotification = () => {
-    if (currentCargo) {
-      addNotification({
-        orderId: Number(currentCargo.id),
-        type: 'cargo',
-        message: `Включены уведомления для груза: ${currentCargo.title} (${currentCargo.loading_point} - ${currentCargo.unloading_point})`,
-      });
-      setShowNotificationDialog(false);
-      toast.success('Уведомления включены');
-    }
-  };
+  // Handle notification subscription via backend
+  const handleEnableNotification = async () => {
+    if (!currentCargo) return;
 
-  const handleFavoriteToggle = (cargo: Cargo) => {
-    if (isFavorite(Number(cargo.id))) {
-      removeFromFavorites(Number(cargo.id));
-      toast.success('Груз удален из избранного');
-    } else {
-      addToFavorites({
-        orderId: Number(cargo.id),
-        type: cargo.vehicle_type,
-        title: `${cargo.title}: ${cargo.loading_point} - ${cargo.unloading_point}`,
-        description: cargo.description,
-        details: {
-          Вес: `${cargo.weight} т`,
-          Объем: cargo.volume ? `${cargo.volume} м³` : 'Не указан',
-          'Тип транспорта': cargo.vehicle_type,
-          Оплата: cargo.payment_method,
-          Цена: cargo.price ? `${cargo.price} ₽` : 'Договорная',
+    try {
+      // Create a search filter with notifications enabled
+      await api.post('/core/search-filters/', {
+        name: `${currentCargo.loading_point} - ${currentCargo.unloading_point}`,
+        filter_data: {
+          loading_location_id: currentCargo.loading_location,
+          unloading_location_id: currentCargo.unloading_location,
+          vehicle_type: currentCargo.vehicle_type,
         },
+        notifications_enabled: true,
       });
-      toast.success('Груз добавлен в избранное');
+
+      toast.success('Уведомления включены');
+      setShowNotificationDialog(false);
+    } catch (error) {
+      console.error('Failed to enable notifications:', error);
+      toast.error('Ошибка при включении уведомлений');
     }
   };
 
+  // Toggle favorite status
+  const handleFavoriteToggle = async (cargo: Cargo) => {
+    const cargoId = Number(cargo.id);
+    const isFav = favorites.includes(cargoId);
+
+    try {
+      if (isFav) {
+        // Find the favorite ID and delete it
+        const favResponse = await api.getFavorites();
+        const favorite = favResponse.results.find(
+          (fav: any) => Number(fav.object_id) === cargoId
+        );
+
+        if (favorite) {
+          await api.delete(`/core/favorites/${favorite.id}/`);
+          setFavorites((prev) => prev.filter((id) => id !== cargoId));
+          toast.success('Удалено из избранного');
+        }
+      } else {
+        // Add to favorites
+        await api.addToFavorites({
+          content_type: 'cargo',
+          object_id: cargo.id,
+        });
+
+        setFavorites((prev) => [...prev, cargoId]);
+        toast.success('Добавлено в избранное');
+      }
+    } catch (error) {
+      console.error('Favorite toggle error:', error);
+      toast.error('Ошибка при изменении избранного');
+    }
+  };
+
+  // Render star rating
   const renderStars = (rating: number = 0) => {
     return Array(5)
       .fill(0)
@@ -1623,12 +2788,24 @@ export default function OrdersPage() {
       ));
   };
 
+  // Toggle expanded cargo details
   const toggleOrderExpansion = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
+  // Format date nicely
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
-    <div className='min-h-screen bg-blue-600 p-4 pb-20'>
+    <div className='min-h-screen bg-blue-600 p-4 pb-20' ref={pageRef}>
       <div className='flex items-center mb-4 bg-white rounded-lg p-2'>
         <Input
           type='text'
@@ -1648,10 +2825,35 @@ export default function OrdersPage() {
         </Button>
       </div>
 
+      {/* Active filters display */}
+      {activeFilters.length > 0 && (
+        <div className='bg-white rounded-lg p-2 mb-4 flex flex-wrap items-center gap-2'>
+          <span className='text-sm font-medium'>Активные фильтры:</span>
+          {activeFilters.map((filter) => (
+            <Badge
+              key={filter}
+              variant='secondary'
+              className='bg-blue-100 text-blue-800'
+            >
+              {filter}
+            </Badge>
+          ))}
+          <Button
+            variant='ghost'
+            size='sm'
+            className='ml-auto h-7 text-red-500 hover:text-red-700 hover:bg-red-50'
+            onClick={clearFilters}
+          >
+            Сбросить
+          </Button>
+        </div>
+      )}
+
       <FilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         onApply={handleApplyFilters}
+        initialFilters={filterParams}
       />
 
       {isLoading ? (
@@ -1661,8 +2863,8 @@ export default function OrdersPage() {
       ) : (
         <div className='space-y-4 mb-20'>
           {filterParams.radius &&
-            (filterParams.loading_location ||
-              filterParams.unloading_location) && (
+            (filterParams.loading_location_id ||
+              filterParams.unloading_location_id) && (
               <div className='bg-white p-3 rounded-lg mb-2 text-sm'>
                 <Badge
                   variant='secondary'
@@ -1670,135 +2872,149 @@ export default function OrdersPage() {
                 >
                   Поиск в радиусе {filterParams.radius} км
                 </Badge>
-                {filterParams.loading_location && (
+                {filterParams.loading_location_id && (
                   <span className='ml-2'>от точки погрузки</span>
                 )}
-                {filterParams.loading_location &&
-                  filterParams.unloading_location && <span> и </span>}
-                {filterParams.unloading_location && (
+                {filterParams.loading_location_id &&
+                  filterParams.unloading_location_id && <span> и </span>}
+                {filterParams.unloading_location_id && (
                   <span>от точки выгрузки</span>
                 )}
               </div>
             )}
 
           {cargos.results && cargos.results.length > 0 ? (
-            cargos.results.map((cargo) => (
-              <Card key={cargo.id} className='bg-white overflow-hidden'>
-                <CardContent className='p-4'>
-                  <div className='flex justify-between items-start mb-2'>
-                    <div className='flex space-x-1'>
-                      {cargo.owner &&
-                        cargo.owner.rating &&
-                        cargo.owner.rating > 4 && (
+            <>
+              {cargos.results.map((cargo) => (
+                <Card key={cargo.id} className='bg-white overflow-hidden'>
+                  <CardContent className='p-4'>
+                    <div className='flex justify-between items-start mb-2'>
+                      <div className='flex space-x-1'>
+                        {cargo.owner &&
+                          cargo.owner.rating &&
+                          cargo.owner.rating > 4 && (
+                            <Badge
+                              variant='secondary'
+                              className='bg-yellow-100 text-yellow-800'
+                              title='Высокий рейтинг'
+                            >
+                              <Star className='h-4 w-4' />
+                            </Badge>
+                          )}
+                        {cargo.owner && cargo.owner.is_verified && (
                           <Badge
                             variant='secondary'
-                            className='bg-yellow-100 text-yellow-800'
-                            title='Высокий рейтинг'
+                            className='bg-green-100 text-green-800'
+                            title='Профиль подтвержден'
                           >
-                            <Star className='h-4 w-4' />
+                            <CheckCircle className='h-4 w-4' />
                           </Badge>
                         )}
-                      {cargo.owner && cargo.owner.is_verified && (
-                        <Badge
-                          variant='secondary'
-                          className='bg-green-100 text-green-800'
-                          title='Профиль подтвержден'
-                        >
-                          <CheckCircle className='h-4 w-4' />
-                        </Badge>
-                      )}
+                      </div>
+                      <div className='flex items-center'>
+                        {cargo.owner && cargo.owner.rating && (
+                          <>
+                            <span className='font-bold mr-1'>
+                              {cargo.owner.rating}
+                            </span>
+                            <div className='flex'>
+                              {renderStars(cargo.owner.rating)}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className='flex items-center'>
-                      {cargo.owner && cargo.owner.rating && (
-                        <>
-                          <span className='font-bold mr-1'>
-                            {cargo.owner.rating}
-                          </span>
-                          <div className='flex'>
-                            {renderStars(cargo.owner.rating)}
-                          </div>
-                        </>
-                      )}
+
+                    <div className='flex justify-between items-center mb-2'>
+                      <span className='font-bold text-lg'>
+                        {cargo.loading_point} - {cargo.unloading_point}
+                      </span>
+                      <span className='text-sm text-gray-500'>
+                        {formatDate(cargo.created_at)}
+                      </span>
                     </div>
-                  </div>
 
-                  <div className='flex justify-between items-center mb-2'>
-                    <span className='font-bold text-lg'>
-                      {cargo.loading_point} - {cargo.unloading_point}
-                    </span>
-                    <span className='text-sm text-gray-500'>
-                      {new Date(cargo.created_at).toLocaleString('ru-RU', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
-
-                  <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
-                    <span>Груз: {cargo.title}</span>
-                    <span>Вес: {cargo.weight} т</span>
-                    <span>Тип: {cargo.vehicle_type}</span>
-                    <span>Оплата: {cargo.payment_method}</span>
-                  </div>
-
-                  <div className='mb-2'>
-                    <span className='font-semibold'>
-                      Цена: {cargo.price ? `${cargo.price} ₽` : 'Договорная'}
-                    </span>
-                  </div>
-
-                  {expandedOrder === cargo.id && (
-                    <div className='mt-4 text-sm'>
-                      <p>Описание: {cargo.description}</p>
-                      {cargo.volume && <p>Объем: {cargo.volume} м³</p>}
-                      <p>
-                        Дата загрузки:{' '}
-                        {new Date(cargo.loading_date).toLocaleDateString()}
-                      </p>
+                    <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
+                      <span>Груз: {cargo.title}</span>
+                      <span>Вес: {cargo.weight} т</span>
+                      <span>
+                        Тип: {getVehicleTypeLabel(cargo.vehicle_type)}
+                      </span>
+                      <span>Оплата: {cargo.payment_method}</span>
                     </div>
-                  )}
 
-                  <div className='flex justify-between mt-4'>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='flex-1 mr-1'
-                      onClick={() => toggleOrderExpansion(cargo.id)}
-                    >
-                      {expandedOrder === cargo.id ? (
-                        <ChevronUp className='h-4 w-4 mr-1' />
-                      ) : (
-                        <ChevronDown className='h-4 w-4 mr-1' />
-                      )}
-                      {expandedOrder === cargo.id ? 'Скрыть' : 'Подробнее'}
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='flex-1 ml-1 mr-1'
-                      onClick={() => handleNotificationToggle(cargo)}
-                    >
-                      <Bell className='h-4 w-4 mr-1' />
-                    </Button>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className={`flex-1 ${
-                        isFavorite(Number(cargo.id))
-                          ? 'text-red-500 hover:text-red-600'
-                          : ''
-                      }`}
-                      onClick={() => handleFavoriteToggle(cargo)}
-                    >
-                      <Heart className='h-4 w-4 mr-1' />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                    <div className='mb-2'>
+                      <span className='font-semibold'>
+                        Цена: {cargo.price ? `${cargo.price} ₽` : 'Договорная'}
+                      </span>
+                    </div>
+
+                    {expandedOrder === cargo.id && (
+                      <div className='mt-4 text-sm'>
+                        <p>Описание: {cargo.description}</p>
+                        {cargo.volume && <p>Объем: {cargo.volume} м³</p>}
+                        <p>
+                          Дата загрузки:{' '}
+                          {new Date(cargo.loading_date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className='flex justify-between mt-4'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='flex-1 mr-1'
+                        onClick={() => toggleOrderExpansion(cargo.id)}
+                      >
+                        {expandedOrder === cargo.id ? (
+                          <ChevronUp className='h-4 w-4 mr-1' />
+                        ) : (
+                          <ChevronDown className='h-4 w-4 mr-1' />
+                        )}
+                        {expandedOrder === cargo.id ? 'Скрыть' : 'Подробнее'}
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='flex-1 ml-1 mr-1'
+                        onClick={() => handleNotificationToggle(cargo)}
+                      >
+                        <Bell className='h-4 w-4 mr-1' />
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className={`flex-1 ${
+                          favorites.includes(Number(cargo.id))
+                            ? 'text-red-500 hover:text-red-600'
+                            : ''
+                        }`}
+                        onClick={() => handleFavoriteToggle(cargo)}
+                      >
+                        <Heart className='h-4 w-4 mr-1' />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {nextPage && (
+                <div className='flex justify-center mt-4'>
+                  <Button
+                    onClick={loadMoreResults}
+                    disabled={isMoreLoading}
+                    variant='outline'
+                    className='bg-white'
+                  >
+                    {isMoreLoading ? (
+                      <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                    ) : null}
+                    Загрузить еще
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <div className='bg-white p-6 rounded-lg text-center text-gray-600'>
               Грузы не найдены. Попробуйте изменить параметры поиска.
@@ -1816,12 +3032,24 @@ export default function OrdersPage() {
             <DialogTitle>Включить уведомления?</DialogTitle>
           </DialogHeader>
           <p>
-            Вы будете получать уведомления о новых предложениях по этому
-            направлению и типу груза.
+            Вы будете получать уведомления в Telegram о новых грузах по этому
+            направлению:
+            {currentCargo && (
+              <strong>
+                {' '}
+                {currentCargo.loading_point} - {currentCargo.unloading_point}
+              </strong>
+            )}
           </p>
-          <div className='flex justify-end space-x-2 mt-4'>
-            <Button onClick={() => setShowErrorDialog(false)}>Понятно</Button>
-          </div>
+          <DialogFooter className='flex justify-end space-x-2 mt-4'>
+            <Button
+              variant='outline'
+              onClick={() => setShowNotificationDialog(false)}
+            >
+              Отмена
+            </Button>
+            <Button onClick={handleEnableNotification}>Включить</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1830,4 +3058,6 @@ export default function OrdersPage() {
       />
     </div>
   );
-}
+};
+
+export default OrdersPage;

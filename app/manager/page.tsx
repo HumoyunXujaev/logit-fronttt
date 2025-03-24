@@ -76,14 +76,17 @@ export default function ManagerPage() {
       // Fetch pending approval cargos
       const pendingResponse = await api.get('/cargo/manager/pending_approval/');
       setPendingCargos(pendingResponse);
+      console.log(pendingCargos, 'pending cargos');
 
       // Fetch approved cargos
       const approvedResponse = await api.get('/cargo/manager/approved/');
       setApprovedCargos(approvedResponse);
+      console.log(approvedCargos, 'approved cargos');
 
       // Fetch all cargos
       const allResponse = await api.get('/cargo/cargos/');
       setAllCargos(allResponse);
+      console.log(allResponse, 'all cargos');
     } catch (error) {
       toast.error('Ошибка при загрузке грузов');
       console.error('Fetch cargos error:', error);
@@ -127,34 +130,34 @@ export default function ManagerPage() {
 
   const renderCargoCard = (cargo: ManagerCargo, isPending: boolean = false) => (
     <Card
-      key={cargo.id}
+      key={cargo?.id}
       className={`mb-4 ${isPending ? 'border-blue-500' : ''}`}
     >
       <CardContent className='p-4'>
         <div className='flex justify-between items-start mb-4'>
           <div>
-            <h3 className='font-bold text-lg'>{cargo.title}</h3>
+            <h3 className='font-bold text-lg'>{cargo?.title}</h3>
             <p className='text-sm text-gray-600'>
-              От: {cargo.owner.company_name || cargo.owner.full_name}
+              От: {cargo?.owner?.company_name || cargo?.owner?.full_name}
             </p>
             <p className='text-sm text-gray-600'>
-              Создан: {new Date(cargo.created_at).toLocaleDateString()}
+              Создан: {new Date(cargo?.created_at).toLocaleDateString()}
             </p>
           </div>
           <Badge
             variant={
-              cargo.status === 'pending_approval'
+              cargo?.status === 'pending_approval'
                 ? 'secondary'
-                : cargo.status === 'manager_approved'
+                : cargo?.status === 'manager_approved'
                 ? 'outline'
                 : 'default'
             }
           >
             {cargo.status === 'pending_approval'
               ? 'Ожидает проверки'
-              : cargo.status === 'manager_approved'
+              : cargo?.status === 'manager_approved'
               ? 'Одобрен'
-              : cargo.status}
+              : cargo?.status}
           </Badge>
         </div>
 
@@ -162,43 +165,44 @@ export default function ManagerPage() {
           <div>
             <span className='font-medium'>Маршрут:</span>
             <p>
-              {cargo.loading_point} → {cargo.unloading_point}
+              {cargo?.loading_point} → {cargo?.unloading_point}
             </p>
           </div>
           <div>
             <span className='font-medium'>Дата загрузки:</span>
-            <p>{new Date(cargo.loading_date).toLocaleDateString()}</p>
+            <p>{new Date(cargo?.loading_date).toLocaleDateString()}</p>
           </div>
           <div>
             <span className='font-medium'>Груз:</span>
             <p>
-              {cargo.weight} т{cargo.volume && `, ${cargo.volume} м³`}
+              {cargo?.weight} т{cargo?.volume && `, ${cargo?.volume} м³`}
             </p>
           </div>
           <div>
             <span className='font-medium'>Оплата:</span>
             <p>
-              {cargo.payment_method}
-              {cargo.price && ` (${cargo.price} ₽)`}
+              {cargo?.payment_method}
+              {cargo?.price && ` (${cargo?.price} ₽)`}
             </p>
           </div>
         </div>
 
-        {isPending && (
-          <div className='flex justify-end space-x-2'>
-            <Button
-              variant='outline'
-              onClick={() => handleAction(cargo, 'reject')}
-            >
-              <XCircle className='h-4 w-4 mr-2' />
-              Отклонить
-            </Button>
-            <Button onClick={() => handleAction(cargo, 'approve')}>
-              <CheckCircle className='h-4 w-4 mr-2' />
-              Одобрить
-            </Button>
-          </div>
-        )}
+        {isPending ||
+          (cargo.status === 'pending_approval' && (
+            <div className='flex justify-end space-x-2'>
+              <Button
+                variant='outline'
+                onClick={() => handleAction(cargo, 'reject')}
+              >
+                <XCircle className='h-4 w-4 mr-2' />
+                Отклонить
+              </Button>
+              <Button onClick={() => handleAction(cargo, 'approve')}>
+                <CheckCircle className='h-4 w-4 mr-2' />
+                Одобрить
+              </Button>
+            </div>
+          ))}
       </CardContent>
     </Card>
   );
@@ -216,14 +220,16 @@ export default function ManagerPage() {
       <h1 className='text-2xl font-bold mb-6'>Панель менеджера</h1>
 
       {/* Pending Approval Section */}
-      {pendingCargos.results.length > 0 && (
+      {pendingCargos?.results?.length > 0 && (
         <div className='mb-8'>
           <h2 className='text-xl font-semibold mb-4'>
             Ожидают проверки{' '}
-            <Badge variant='secondary'>{pendingCargos.results.length}</Badge>
+            <Badge variant='secondary'>{pendingCargos?.results?.length}</Badge>
           </h2>
           <div className='space-y-4'>
-            {pendingCargos.results.map((cargo) => renderCargoCard(cargo, true))}
+            {pendingCargos?.results?.map((cargo) =>
+              renderCargoCard(cargo, true)
+            )}
           </div>
         </div>
       )}
@@ -232,10 +238,10 @@ export default function ManagerPage() {
       <div className='mb-8'>
         <h2 className='text-xl font-semibold mb-4'>
           Одобренные грузы{' '}
-          <Badge variant='secondary'>{approvedCargos.results.length}</Badge>
+          <Badge variant='secondary'>{approvedCargos?.results?.length}</Badge>
         </h2>
         <div className='space-y-4'>
-          {approvedCargos.results.map((cargo) => renderCargoCard(cargo))}
+          {approvedCargos?.results?.map((cargo) => renderCargoCard(cargo))}
         </div>
       </div>
 
@@ -243,10 +249,10 @@ export default function ManagerPage() {
       <div className='mb-20'>
         <h2 className='text-xl font-semibold mb-4'>
           Все грузы{' '}
-          <Badge variant='secondary'>{allCargos.results.length}</Badge>
+          <Badge variant='secondary'>{allCargos?.results?.length}</Badge>
         </h2>
         <div className='space-y-4'>
-          {allCargos.results.map((cargo) => renderCargoCard(cargo))}
+          {allCargos?.results?.map((cargo) => renderCargoCard(cargo))}
         </div>
       </div>
 
@@ -269,10 +275,10 @@ export default function ManagerPage() {
             {selectedCargo && (
               <div className='mt-4'>
                 <div className='p-4 bg-gray-50 rounded-lg mb-4'>
-                  <p className='font-medium'>{selectedCargo.title}</p>
+                  <p className='font-medium'>{selectedCargo?.title}</p>
                   <p className='text-sm text-gray-600'>
-                    {selectedCargo.loading_point} →{' '}
-                    {selectedCargo.unloading_point}
+                    {selectedCargo?.loading_point} →{' '}
+                    {selectedCargo?.unloading_point}
                   </p>
                 </div>
                 <textarea

@@ -366,9 +366,9 @@ export class ApiClient {
   }
 
   // Search
-  public async searchCargo(filters: any) {
+  public async searchCargo(params?: any) {
     try {
-      const response = await this.api.post('/cargo/search/', filters);
+      const response = await this.api.get('/cargo/cargos/search/', { params });
       return response.data;
     } catch (error) {
       console.error('Search cargo error:', error);
@@ -569,6 +569,62 @@ export class ApiClient {
       throw error;
     }
   }
+
+  public async getRatings(params?: any) {
+    try {
+      const response = await this.api.get('/core/ratings/', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Get ratings error:', error);
+      throw error;
+    }
+  }
+
+  public async createRating(data: {
+    to_user: string;
+    score: number;
+    comment?: string;
+    cargo_id?: string;
+  }) {
+    try {
+      const response = await this.api.post('/core/ratings/', data);
+      return response.data;
+    } catch (error) {
+      console.error('Create rating error:', error);
+      throw error;
+    }
+  }
+
+  public async updateRating(
+    id: string,
+    data: {
+      score?: number;
+      comment?: string;
+    }
+  ) {
+    try {
+      const response = await this.api.patch(`/core/ratings/${id}/`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Update rating error:', error);
+      throw error;
+    }
+  }
+
+  public async deleteRating(id: string) {
+    try {
+      const response = await this.api.delete(`/core/ratings/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Delete rating error:', error);
+      throw error;
+    }
+  }
 }
+
+// Reinitialize the API client to apply our interceptors
+export const initApiClient = () => {
+  return ApiClient.getInstance();
+};
 
 export const api = ApiClient.getInstance();

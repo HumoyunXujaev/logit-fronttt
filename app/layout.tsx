@@ -9,6 +9,7 @@ import { LoadingProvider } from '@/components/LoadingProvider';
 import { ToastProvider } from '@/components/ToastProvider';
 import Script from 'next/script';
 import { UserProvider } from '@/contexts/UserContext';
+import UserSwitcher from '@/components/UserSwitcher';
 
 const inter = Inter({ subsets: ['latin'] });
 export default function RootLayout({
@@ -31,6 +32,7 @@ export default function RootLayout({
               {/* <ThemeProvider> */}
               <LoadingProvider>
                 <ToastProvider />
+                <UserSwitcher />
                 {children}
               </LoadingProvider>
             </UserProvider>

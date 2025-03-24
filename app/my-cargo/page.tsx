@@ -27,6 +27,7 @@ interface Cargo {
   id: string;
   title: string;
   status: string;
+
   loading_point: string;
   unloading_point: string;
   weight: number;
@@ -48,10 +49,7 @@ export default function MyCargoPage() {
 
   useEffect(() => {
     fetchCargos();
-    if (
-      userState.role !== 'student' &&
-      userState.role !== 'logistics-company'
-    ) {
+    if (userState.role === 'carrier') {
       setiscarrier(true);
     }
   }, []);
@@ -179,6 +177,16 @@ export default function MyCargoPage() {
               Деактивировать
             </Button>
           )}
+          {/* {cargo.status === 'completed' && cargo.assigned_to && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => router.push('/reviews')}
+            >
+              <Star className='h-4 w-4 mr-2' />
+              Оценить
+            </Button>
+          )} */}
         </div>
       </CardContent>
     </Card>

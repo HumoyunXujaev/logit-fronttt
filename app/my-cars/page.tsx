@@ -1,11 +1,13 @@
-// app/my-cars/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -137,9 +139,24 @@ const initialVehicleForm = {
   license_number: '',
 };
 
-const initialCarrierRequestForm = {
+interface CarrierRequestForm {
+  loading_point: string;
+  unloading_point: string;
+  loading_location?: string;
+  unloading_location?: string;
+  ready_date: string;
+  vehicle: string;
+  vehicle_count: number;
+  price_expectation?: number;
+  payment_terms: string;
+  notes: string;
+}
+
+const initialCarrierRequestForm: CarrierRequestForm = {
   loading_point: '',
   unloading_point: '',
+  loading_location: '',
+  unloading_location: '',
   ready_date: '',
   vehicle: '',
   vehicle_count: 1,
@@ -147,6 +164,26 @@ const initialCarrierRequestForm = {
   payment_terms: '',
   notes: '',
 };
+
+interface Location {
+  id: number;
+  name: string;
+  level: number; // 1 = Country, 2 = Region/State, 3 = City
+  parent_name?: string;
+  country_name?: string;
+  full_name?: string;
+}
+
+// const initialCarrierRequestForm = {
+//   loading_point: '',
+//   unloading_point: '',
+//   ready_date: '',
+//   vehicle: '',
+//   vehicle_count: 1,
+//   price_expectation: undefined,
+//   payment_terms: '',
+//   notes: '',
+// };
 
 interface DocumentFormData {
   file: File;
@@ -660,34 +697,326 @@ export default function MyVehiclesPage() {
     </div>
   );
 
+  const LocationSelector = ({
+    value,
+    onChange,
+    placeholder,
+    error,
+    errorMessage,
+  }: {
+    value: { id: string; name: string };
+    onChange: (value: { id: string; name: string }) => void;
+    placeholder: string;
+    error?: boolean;
+    errorMessage?: string;
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target as Node)
+        ) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, []);
+
+    // Search locations when query changes
+    useEffect(() => {
+      if (searchQuery.length >= 2) {
+        setIsLoading(true);
+        setOpen(true);
+
+        const timer = setTimeout(() => {
+          api
+            .searchLocations(searchQuery)
+            .then((data) => {
+              setLocations(Array.isArray(data) ? data : []);
+              setIsLoading(false);
+            })
+            .catch((err) => {
+              console.error('Search error:', err);
+              setLocations([]);
+              setIsLoading(false);
+            });
+        }, 300);
+
+        return () => clearTimeout(timer);
+      } else {
+        setLocations([]);
+        if (searchQuery.length === 0) {
+          setOpen(false);
+        }
+      }
+    }, [searchQuery]);
+
+    const handleSelect = (location: Location) => {
+      onChange({
+        id: location.id.toString(),
+        name: location.full_name || location.name,
+      });
+      setSearchQuery('');
+      setOpen(false);
+    };
+
+    return (
+      <div className='relative w-full' ref={containerRef}>
+        <Input
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+          className={cn(error && 'border-red-500')}
+        />
+
+        {/* Show selected value when search is empty */}
+        {value.name && searchQuery === '' && (
+          <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
+            {value.name}
+          </div>
+        )}
+
+        {open && (
+          <div className='absolute z-10 w-full mt-1 bg-white rounded-md border shadow-md'>
+            <div className='p-1'>
+              {isLoading ? (
+                <div className='p-4 text-center text-sm text-muted-foreground'>
+                  Загрузка...
+                </div>
+              ) : locations.length === 0 ? (
+                <div className='p-4 text-center text-sm text-muted-foreground'>
+                  {searchQuery.length < 2
+                    ? 'Введите минимум 2 символа для поиска'
+                    : 'Ничего не найдено'}
+                </div>
+              ) : (
+                <ScrollArea className='h-[300px]'>
+                  {locations.map((location) => (
+                    <div
+                      key={location.id}
+                      onClick={() => handleSelect(location)}
+                      className={cn(
+                        'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
+                        'hover:bg-blue-50'
+                      )}
+                    >
+                      <div className='flex-1'>
+                        <p className='text-sm font-medium'>
+                          {location.name}
+                          {location.level === 3 && location.parent_name && (
+                            <span className='text-gray-500'>
+                              {' - '}
+                              {location.parent_name}
+                            </span>
+                          )}
+                          {location.country_name && location.level !== 1 && (
+                            <span className='text-gray-500'>
+                              {', '}
+                              {location.country_name}
+                            </span>
+                          )}
+                        </p>
+                        {location.full_name && (
+                          <p className='text-xs text-gray-500'>
+                            {location.full_name}
+                          </p>
+                        )}
+                      </div>
+                      {value.id === location.id.toString() && (
+                        <Check className='h-4 w-4' />
+                      )}
+                    </div>
+                  ))}
+                </ScrollArea>
+              )}
+            </div>
+          </div>
+        )}
+
+        {error && errorMessage && (
+          <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+        )}
+      </div>
+    );
+  };
+
+  // const renderCarrierRequestForm = () => (
+  //   <div className='space-y-4'>
+  //     <div>
+  //       <label className='block text-sm font-medium mb-2'>
+  //         Пункт погрузки*
+  //       </label>
+  //       <Input
+  //         placeholder='Откуда'
+  //         value={requestForm.loading_point}
+  //         onChange={(e) =>
+  //           handleRequestInputChange('loading_point', e.target.value)
+  //         }
+  //       />
+  //     </div>
+
+  //     <div>
+  //       <label className='block text-sm font-medium mb-2'>
+  //         Пункт выгрузки*
+  //       </label>
+  //       <Input
+  //         placeholder='Куда'
+  //         value={requestForm.unloading_point}
+  //         onChange={(e) =>
+  //           handleRequestInputChange('unloading_point', e.target.value)
+  //         }
+  //       />
+  //     </div>
+
+  //     <div>
+  //       <label className='block text-sm font-medium mb-2'>
+  //         Дата готовности*
+  //       </label>
+  //       <Input
+  //         type='date'
+  //         value={requestForm.ready_date}
+  //         onChange={(e) =>
+  //           handleRequestInputChange('ready_date', e.target.value)
+  //         }
+  //         min={new Date().toISOString().split('T')[0]}
+  //       />
+  //     </div>
+
+  //     <div>
+  //       <label className='block text-sm font-medium mb-2'>Транспорт*</label>
+  //       <Select
+  //         value={requestForm.vehicle}
+  //         onValueChange={(value) => handleRequestInputChange('vehicle', value)}
+  //       >
+  //         <SelectTrigger>
+  //           <SelectValue placeholder='Выберите транспорт' />
+  //         </SelectTrigger>
+  //         <SelectContent>
+  //           {vehicles?.results?.map((vehicle: any) => (
+  //             <SelectItem key={vehicle.id} value={vehicle.id}>
+  //               {vehicle.registration_number} -{' '}
+  //               {bodyTypes.find((t) => t.value === vehicle.body_type)?.label}
+  //             </SelectItem>
+  //           ))}
+  //         </SelectContent>
+  //       </Select>
+  //     </div>
+
+  //     <div className='grid grid-cols-2 gap-4'>
+  //       <div>
+  //         <label className='block text-sm font-medium mb-2'>
+  //           Количество машин
+  //         </label>
+  //         <Input
+  //           type='number'
+  //           min={1}
+  //           value={requestForm.vehicle_count}
+  //           onChange={(e) =>
+  //             handleRequestInputChange(
+  //               'vehicle_count',
+  //               parseInt(e.target.value)
+  //             )
+  //           }
+  //         />
+  //       </div>
+  //       <div>
+  //         <label className='block text-sm font-medium mb-2'>
+  //           Ожидаемая цена
+  //         </label>
+  //         <Input
+  //           type='number'
+  //           placeholder='Цена'
+  //           value={requestForm.price_expectation || ''}
+  //           onChange={(e) =>
+  //             handleRequestInputChange(
+  //               'price_expectation',
+  //               parseFloat(e.target.value)
+  //             )
+  //           }
+  //         />
+  //       </div>
+  //     </div>
+
+  //     <div>
+  //       <label className='block text-sm font-medium mb-2'>Условия оплаты</label>
+  //       <Select
+  //         value={requestForm.payment_terms || ''}
+  //         onValueChange={(value) =>
+  //           handleRequestInputChange('payment_terms', value)
+  //         }
+  //       >
+  //         <SelectTrigger>
+  //           <SelectValue placeholder='Выберите условия оплаты' />
+  //         </SelectTrigger>
+  //         <SelectContent>
+  //           <SelectItem value='on_loading'>При погрузке</SelectItem>
+  //           <SelectItem value='on_unloading'>При выгрузке</SelectItem>
+  //           <SelectItem value='after_unloading'>После выгрузки</SelectItem>
+  //           <SelectItem value='delayed'>Отсрочка платежа</SelectItem>
+  //         </SelectContent>
+  //       </Select>
+  //     </div>
+
+  //     <div>
+  //       <label className='block text-sm font-medium mb-2'>Примечания</label>
+  //       <Input
+  //         placeholder='Дополнительная информация'
+  //         value={requestForm.notes}
+  //         onChange={(e) => handleRequestInputChange('notes', e.target.value)}
+  //       />
+  //     </div>
+  //   </div>
+  // );
+
   const renderCarrierRequestForm = () => (
     <div className='space-y-4'>
       <div>
         <label className='block text-sm font-medium mb-2'>
           Пункт погрузки*
         </label>
-        <Input
-          placeholder='Откуда'
-          value={requestForm.loading_point}
-          onChange={(e) =>
-            handleRequestInputChange('loading_point', e.target.value)
-          }
+        <LocationSelector
+          value={{
+            id: requestForm.loading_location || '',
+            name: requestForm.loading_point || '',
+          }}
+          onChange={({ id, name }: any) => {
+            handleRequestInputChange('loading_location', id);
+            handleRequestInputChange('loading_point', name);
+          }}
+          placeholder='Введите пункт погрузки'
+          error={!requestForm.loading_point}
+          errorMessage='Пункт погрузки обязателен'
         />
       </div>
-
       <div>
         <label className='block text-sm font-medium mb-2'>
           Пункт выгрузки*
         </label>
-        <Input
-          placeholder='Куда'
-          value={requestForm.unloading_point}
-          onChange={(e) =>
-            handleRequestInputChange('unloading_point', e.target.value)
-          }
+        <LocationSelector
+          value={{
+            id: requestForm.unloading_location || '',
+            name: requestForm.unloading_point || '',
+          }}
+          onChange={({ id, name }: any) => {
+            handleRequestInputChange('unloading_location', id);
+            handleRequestInputChange('unloading_point', name);
+          }}
+          placeholder='Введите пункт выгрузки'
+          error={!requestForm.unloading_point}
+          errorMessage='Пункт выгрузки обязателен'
         />
       </div>
-
       <div>
         <label className='block text-sm font-medium mb-2'>
           Дата готовности*
@@ -701,7 +1030,6 @@ export default function MyVehiclesPage() {
           min={new Date().toISOString().split('T')[0]}
         />
       </div>
-
       <div>
         <label className='block text-sm font-medium mb-2'>Транспорт*</label>
         <Select
@@ -721,7 +1049,6 @@ export default function MyVehiclesPage() {
           </SelectContent>
         </Select>
       </div>
-
       <div className='grid grid-cols-2 gap-4'>
         <div>
           <label className='block text-sm font-medium mb-2'>
@@ -756,7 +1083,6 @@ export default function MyVehiclesPage() {
           />
         </div>
       </div>
-
       <div>
         <label className='block text-sm font-medium mb-2'>Условия оплаты</label>
         <Select
@@ -776,7 +1102,6 @@ export default function MyVehiclesPage() {
           </SelectContent>
         </Select>
       </div>
-
       <div>
         <label className='block text-sm font-medium mb-2'>Примечания</label>
         <Input

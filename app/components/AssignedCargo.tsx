@@ -36,6 +36,9 @@ interface AssignedCargo {
   assigned_by: {
     full_name: string;
   };
+  managed_by: {
+    full_name: string;
+  };
 }
 
 export default function AssignedCargosSection() {
@@ -138,7 +141,7 @@ export default function AssignedCargosSection() {
                         {cargo?.owner?.company_name || cargo?.owner?.full_name}
                       </p>
                       <p className='text-sm text-gray-600'>
-                        Назначен: {cargo?.assigned_by?.full_name}
+                        Назначен (Логист): {cargo?.managed_by?.full_name}
                       </p>
                     </div>
                     <Badge variant='secondary'>

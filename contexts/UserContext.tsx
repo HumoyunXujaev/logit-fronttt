@@ -5,7 +5,6 @@ import { UserState } from '@/types';
 
 interface UserContextType {
   userState: UserState;
-
   setUserType: (type: UserState['type']) => void;
   setUserRole: (role: UserState['role']) => void;
   setLanguage: (language: UserState['language']) => void;
@@ -13,73 +12,38 @@ interface UserContextType {
   logout: () => void;
   isAuthenticated: boolean;
 }
+
 const USER_STORAGE_KEY = 'logit_user_state';
+const SELECTED_TEST_USER_KEY = 'selectedTestUser';
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [userState, setUserState] = useState<UserState>({});
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const initUser = async () => {
-  //     try {
-  //       // Check if we're in Telegram WebApp
-  //       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-  //         const webApp = window.Telegram.WebApp;
-  //         console.log('WebApp data:', {
-  //           initData: webApp.initData,
-  //           initDataUnsafe: webApp.initDataUnsafe,
-  //         });
-
-  //         //   const initdata = webApp.initData;
-  //         //   const initdataunsafe = webApp.initDataUnsafe
-  //         //   const data = {initdataunsafe, initdata}
-  //         if (webApp) {
-  //           const response = await AuthService.telegramAuth(webApp);
-
-  //           console.log(response);
-  //           if (response.user) {
-  //             setUserData(response.user);
-  //           }
-  //           // await AuthService.telegramAuth(webApp).catch((err) =>
-  //           //   console.log(err)
-  //           // );
-  //           // setUserState((prev) => ({
-  //           //   ...prev,
-  //           //   isAuthenticated: true,
-
-  //           // userData: {
-  //           //   fullName: response.user?.username || '',
-  //           // //   telegramNumber: telegramUser.user?.id?.toString() || '',
-  //           // },
-  //           // }));
-  //           // Store user state
-  //           // localStorage.setItem(
-  //           //   USER_STORAGE_KEY,
-  //           //   JSON.stringify({
-  //           //     isAuthenticated: true,
-  //           //   })
-  //           // );
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error('Init user error:', error);
-  //     }
-  //   };
-
-  //   initUser();
-  // }, []);
-
-  // Inside UserProvider component
+  // Initialize user state
   useEffect(() => {
     const initUser = async () => {
       try {
+        // Check if we have a stored user state
+        const storedUserState = localStorage.getItem(USER_STORAGE_KEY);
+        if (storedUserState) {
+          setUserState(JSON.parse(storedUserState));
+        }
+
+        // Check if we're in Telegram WebApp
         if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
           const webApp = window.Telegram.WebApp;
 
           if (webApp.initData && webApp.initDataUnsafe) {
-            // Проверяем, существует ли пользователь
+            // Check if we have a selected test user
+            const hasSelectedTestUser = localStorage.getItem(
+              SELECTED_TEST_USER_KEY
+            );
+
+            // Proceed with auth check
             const userExists = await AuthService.checkTelegramAuth(
               webApp
             ).catch((err) => {
@@ -88,23 +52,44 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             });
 
             if (userExists) {
-              // Если пользователь существует, перенаправляем на home
-              console.log('user exists');
-              // webApp.requestFullscreen();
-              router.push('/menu');
-            } else {
-              // Если пользователь не существует, начинаем процесс регистрации
+              // If user exists, try to retrieve their profile
+              try {
+                const userData = await AuthService.getProfile();
+                if (userData) {
+                  updateUserState({
+                    type: userData.type,
+                    role: userData.role,
+                    language: userData.preferred_language,
+                    isAuthenticated: true,
+                  });
+
+                  // If we're on the select-lang page but already authenticated, redirect to home
+                  if (
+                    window.location.pathname === '/select-lang' ||
+                    window.location.pathname === '/'
+                  ) {
+                    router.push('/menu');
+                  }
+                }
+              } catch (profileError) {
+                console.error('Error fetching profile:', profileError);
+              }
+            } else if (!hasSelectedTestUser) {
+              // If user doesn't exist and we don't have a selected test user,
+              // start registration process
               router.push('/select-lang');
             }
           }
         }
       } catch (error) {
         console.error('Init user error:', error);
+      } finally {
+        setIsInitialized(true);
       }
     };
 
     initUser();
-  }, []);
+  }, [router]);
 
   const updateUserState = (newState: Partial<UserState>) => {
     const updatedState = { ...userState, ...newState };
@@ -126,24 +111,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const setUserData = async (data: any) => {
     try {
-      // const updatedUser = await AuthService.updateProfile(data);
       updateUserState({
         type: data.type,
         role: data.role,
         language: data.preferred_language,
-
         isAuthenticated: true,
       });
-      console.log(data.type, 'test');
     } catch (error) {
       console.error('Update user data error:', error);
     }
   };
 
   const logout = () => {
+    // Use the modified logout that preserves selectedTestUser
     AuthService.logout();
+
+    // Remove user state from local storage but keep the test user selection
     localStorage.removeItem(USER_STORAGE_KEY);
+
+    // Reset context state
     setUserState({});
+
+    // Redirect to login
     router.push('/select-lang');
   };
 
@@ -153,7 +142,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         userState,
         setUserType,
         setUserRole,
-        // updateUserState,
         setLanguage,
         setUserData,
         logout,

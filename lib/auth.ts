@@ -14,6 +14,7 @@ interface TelegramAuthResponse {
   refresh: string;
   user: any;
 }
+
 interface RegistrationData {
   telegramData: any;
   userData: any;
@@ -43,9 +44,16 @@ export class AuthService {
 
   private static async handleAuthResponse(response: any) {
     const { access, refresh, user } = response.data;
+
+    // Save tokens and user info
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
-    localStorage.setItem('telegram_id', user?.telegram_id);
+
+    // Save telegram ID for future reference
+    if (user?.telegram_id) {
+      localStorage.setItem('telegram_id', user.telegram_id);
+    }
+
     return response.data;
   }
 
@@ -56,16 +64,16 @@ export class AuthService {
 
       const response = await api.post('/users/telegram_auth/', authPayload);
 
-      // Если пользователь найден, сохраняем токены и возвращаем true
+      // If user is found, save tokens and return true
       await this.handleAuthResponse(response);
       return true;
     } catch (error) {
       if (error instanceof AxiosError) {
         if (error.response?.status === 404) {
-          // Пользователь не найден - это ожидаемый результат
+          // User not found - this is an expected result
           return false;
         }
-        // Другие ошибки
+        // Other errors
         const message =
           error.response?.data?.detail || 'Authentication check failed';
         toast.error(message);
@@ -83,32 +91,20 @@ export class AuthService {
     data: RegistrationData
   ): Promise<TelegramAuthResponse> {
     try {
-      // Шаг 1: Регистрация с Telegram данными
+      // Step 1: Register with Telegram data
       const authPayload = await this.prepareAuthPayload(data.telegramData);
       const registrationResponse = await api.post('/users/register/', {
         ...authPayload,
         userData: data.userData,
       });
+
       console.log(registrationResponse, 'regres');
 
-      // Сохраняем токены после регистрации
+      // Save tokens after registration
       await this.handleAuthResponse(registrationResponse);
-
-      // Add delay before profile update (2 seconds)
-      // await this.delay(2000);
-
-      // // Configure headers with new token
-      // const token = localStorage.getItem('access_token');
-      // api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // // Step 2: Update user profile
-      // const updateResponse = await api.put('/users/update_profile/', {
-      //   ...data.userData,
-      // });
 
       return {
         ...registrationResponse.data,
-        // user: updateResponse.data,
       };
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -127,16 +123,14 @@ export class AuthService {
 
       const response = await api.post<{ access: string }>(
         '/auth/token/refresh/',
-        {
-          refresh,
-        }
+        { refresh }
       );
 
       const { access } = response.data;
       localStorage.setItem('access_token', access);
-
       return access;
     } catch (error) {
+      // On refresh failure, clean up tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       throw error;
@@ -183,8 +177,17 @@ export class AuthService {
   }
 
   static logout() {
+    // Don't remove telegram_id to maintain user selection in user switcher
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+  }
+
+  static clearAllAuthData() {
+    // Use this when you want to completely clear all auth data
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('telegram_id');
+    localStorage.removeItem('selectedTestUser');
   }
 }
 
@@ -193,7 +196,6 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
