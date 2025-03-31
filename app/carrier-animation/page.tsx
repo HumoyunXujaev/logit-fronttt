@@ -1,14 +1,15 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import img from '../blue.png';
+import { useTranslation } from '@/contexts/i18n';
 
 export default function CarrierAnimationPage() {
   const [animationStage, setAnimationStage] = useState(0);
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const timers = [
@@ -43,11 +44,7 @@ export default function CarrierAnimationPage() {
       y: 0,
       transition: { type: 'spring', stiffness: 100, damping: 10, delay: 0.5 },
     },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: { duration: 0.5 },
-    },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.5 } },
   };
 
   const statsVariants = {
@@ -63,11 +60,7 @@ export default function CarrierAnimationPage() {
         staggerChildren: 0.2,
       },
     },
-    exit: {
-      opacity: 0,
-      scale: 0.9,
-      transition: { duration: 0.5 },
-    },
+    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.5 } },
   };
 
   const statItemVariants = {
@@ -113,10 +106,10 @@ export default function CarrierAnimationPage() {
               className='text-4xl font-bold text-white mb-4'
               style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}
             >
-              Следуй за мечтой
+              {t('animation.followYourDream')}
             </motion.h1>
             <motion.p className='text-xl text-white'>
-              Вместе мы достигнем новых высот
+              {t('animation.togetherSuccess')}
             </motion.p>
           </motion.div>
         )}
@@ -132,9 +125,21 @@ export default function CarrierAnimationPage() {
           >
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
               {[
-                { label: 'Пользователи', value: '+48,437', icon: '👥' },
-                { label: 'Перевозчики', value: '+43,743', icon: '🚚' },
-                { label: 'Заявки', value: '+4,343', icon: '📦' },
+                {
+                  label: t('animation.stats.users'),
+                  value: '+48,437',
+                  icon: '👥',
+                },
+                {
+                  label: t('animation.stats.carriers'),
+                  value: '+43,743',
+                  icon: '🚚',
+                },
+                {
+                  label: t('animation.stats.cargos'),
+                  value: '+4,343',
+                  icon: '📦',
+                },
               ].map((stat, index) => (
                 <motion.div
                   key={index}

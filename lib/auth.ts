@@ -20,11 +20,16 @@ interface RegistrationData {
   userData: any;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// Get API URL dynamically from environment variables
+const getApiUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  console.log('Auth service using API URL:', apiUrl);
+  return apiUrl || 'http://localhost:8000/api';
+};
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: getApiUrl(),
   headers: {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': '69420',
@@ -44,16 +49,13 @@ export class AuthService {
 
   private static async handleAuthResponse(response: any) {
     const { access, refresh, user } = response.data;
-
     // Save tokens and user info
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
-
     // Save telegram ID for future reference
     if (user?.telegram_id) {
       localStorage.setItem('telegram_id', user.telegram_id);
     }
-
     return response.data;
   }
 
@@ -61,9 +63,9 @@ export class AuthService {
     try {
       const authPayload = await this.prepareAuthPayload(telegramData);
       console.log('Checking auth payload:', authPayload);
-
+      // Update baseURL before each request to ensure we're using the latest env var
+      api.defaults.baseURL = getApiUrl();
       const response = await api.post('/users/telegram_auth/', authPayload);
-
       // If user is found, save tokens and return true
       await this.handleAuthResponse(response);
       return true;
@@ -91,18 +93,17 @@ export class AuthService {
     data: RegistrationData
   ): Promise<TelegramAuthResponse> {
     try {
+      // Update baseURL before each request
+      api.defaults.baseURL = getApiUrl();
       // Step 1: Register with Telegram data
       const authPayload = await this.prepareAuthPayload(data.telegramData);
       const registrationResponse = await api.post('/users/register/', {
         ...authPayload,
         userData: data.userData,
       });
-
       console.log(registrationResponse, 'regres');
-
       // Save tokens after registration
       await this.handleAuthResponse(registrationResponse);
-
       return {
         ...registrationResponse.data,
       };
@@ -118,14 +119,14 @@ export class AuthService {
 
   static async refreshToken(): Promise<string> {
     try {
+      // Update baseURL before each request
+      api.defaults.baseURL = getApiUrl();
       const refresh = localStorage.getItem('refresh_token');
       if (!refresh) throw new Error('No refresh token');
-
       const response = await api.post<{ access: string }>(
         '/auth/token/refresh/',
         { refresh }
       );
-
       const { access } = response.data;
       localStorage.setItem('access_token', access);
       return access;
@@ -139,6 +140,8 @@ export class AuthService {
 
   static async updateProfile(data: any) {
     try {
+      // Update baseURL before each request
+      api.defaults.baseURL = getApiUrl();
       const token = localStorage.getItem('access_token');
       const response = await api.put('/users/update_profile/', data, {
         headers: {
@@ -158,9 +161,10 @@ export class AuthService {
 
   static async getProfile() {
     try {
+      // Update baseURL before each request
+      api.defaults.baseURL = getApiUrl();
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error('No auth token');
-
       const response = await api.get('/users/me/', {
         headers: {
           Authorization: `Bearer ${token}`,

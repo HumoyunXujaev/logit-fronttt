@@ -1,9 +1,8 @@
 'use client';
-
-import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import { useTranslation } from '@/contexts/i18n';
 import {
   User,
   Truck,
@@ -20,20 +19,17 @@ export default function UserRoleSelection() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { userState, setUserRole } = useUser();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (userState.isAuthenticated) {
       router.push('/home');
     }
-    // if (!userState.type || !userState.language) {
-    //   router.push('/select-lang');
-    // }
-    console.log(userState.language, 'userstatelang')
-    console.log(userState.type, 'userstatetype')
   }, [userState, router]);
 
   const handleRoleSelect = (role: string) => {
     setUserRole(role as any);
+
     if (role === 'student') {
       router.push('/student-password');
     } else if (role === 'carrier') {
@@ -50,20 +46,19 @@ export default function UserRoleSelection() {
         className='bg-blue-500 hover:bg-blue-600 text-white text-center py-6 px-4 rounded-lg text-sm font-semibold transition duration-300 flex flex-col items-center justify-center h-32'
       >
         <User size={32} className='mb-2' />
-        <span>Студент</span>
+        <span>{t('selectRole.student')}</span>
         <span className='text-xs mt-1 text-blue-100'>
-          Для учащихся Logit School
+          {t('selectRole.studentDesc')}
         </span>
       </Button>
-
       <Button
         onClick={() => handleRoleSelect('carrier')}
         className='bg-blue-500 hover:bg-blue-600 text-white text-center py-6 px-4 rounded-lg text-sm font-semibold transition duration-300 flex flex-col items-center justify-center h-32'
       >
         <Truck size={32} className='mb-2' />
-        <span>Перевозчик</span>
+        <span>{t('selectRole.carrier')}</span>
         <span className='text-xs mt-1 text-blue-100'>
-          Для владельцев транспорта
+          {t('selectRole.carrierDesc')}
         </span>
       </Button>
     </div>
@@ -76,41 +71,40 @@ export default function UserRoleSelection() {
         className='bg-blue-500 hover:bg-blue-600 text-white text-center py-6 px-4 rounded-lg text-sm font-semibold transition duration-300 flex flex-col items-center justify-center h-32'
       >
         <Package size={32} className='mb-2' />
-        <span>Грузовладелец</span>
+        <span>{t('selectRole.cargoOwner')}</span>
         <span className='text-xs mt-1 text-blue-100'>
-          Для владельцев грузов
+          {t('selectRole.cargoOwnerDesc')}
         </span>
       </Button>
-
       <Button
         onClick={() => handleRoleSelect('logistics-company')}
         className='bg-blue-500 hover:bg-blue-600 text-white text-center py-6 px-4 rounded-lg text-sm font-semibold transition duration-300 flex flex-col items-center justify-center h-32'
       >
         <Briefcase size={32} className='mb-2' />
-        <span>Экспедиторская компания</span>
+        <span>{t('selectRole.logisticsCompany')}</span>
         <span className='text-xs mt-1 text-blue-100'>
-          Для логистических компаний
+          {t('selectRole.logisticsCompanyDesc')}
         </span>
       </Button>
-
       <Button
         onClick={() => handleRoleSelect('transport-company')}
         className='bg-blue-500 hover:bg-blue-600 text-white text-center py-6 px-4 rounded-lg text-sm font-semibold transition duration-300 flex flex-col items-center justify-center h-32'
       >
         <Truck size={32} className='mb-2' />
-        <span>Транспортная компания</span>
+        <span>{t('selectRole.transportCompany')}</span>
         <span className='text-xs mt-1 text-blue-100'>
-          Для транспортных компаний
+          {t('selectRole.transportCompanyDesc')}
         </span>
       </Button>
-
       <Button
         onClick={() => handleRoleSelect('logit-trans')}
         className='bg-blue-500 hover:bg-blue-600 text-white text-center py-6 px-4 rounded-lg text-sm font-semibold transition duration-300 flex flex-col items-center justify-center h-32'
       >
         <TrendingUp size={32} className='mb-2' />
-        <span>Логит транс</span>
-        <span className='text-xs mt-1 text-blue-100'>Для партнеров Logit</span>
+        <span>{t('selectRole.logitTrans')}</span>
+        <span className='text-xs mt-1 text-blue-100'>
+          {t('selectRole.logitTransDesc')}
+        </span>
       </Button>
     </div>
   );
@@ -135,23 +129,18 @@ export default function UserRoleSelection() {
           onClick={() => router.push('/select-person')}
         >
           <ArrowLeft className='mr-2' size={24} />
-          Назад
+          {t('common.back')}
         </Button>
       </div>
-
       <main className='flex-grow flex items-center justify-center p-4'>
         <Card className='bg-red-700 rounded-lg shadow-lg p-6 max-w-2xl w-full border-2 border-white'>
           <h1 className='text-3xl font-bold mb-4 text-center text-white'>
-            Выберите вашу роль
+            {t('selectRole.title')}
           </h1>
           <section className='mb-8 text-center text-white'>
-            <p className='mb-4'>
-              Пожалуйста обратите внимание! Сейчас вам необходимо выбрать кем вы
-              являетесь
-            </p>
-            <p>Выберите ваш статус</p>
+            <p className='mb-4'>{t('selectRole.description')}</p>
+            <p>{t('selectRole.selectStatus')}</p>
           </section>
-
           {renderContent()}
         </Card>
       </main>

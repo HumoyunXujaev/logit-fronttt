@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CardDescription } from '@/components/ui/card';
@@ -21,7 +20,9 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
+import { useTranslation } from '@/contexts/i18n';
 import NavigationMenu from '@/app/components/NavigationMenu';
+import LanguageSelector from '@/components/LanguageSelector';
 import {
   ArrowLeft,
   Bell,
@@ -37,21 +38,32 @@ import {
   Loader2,
 } from 'lucide-react';
 
-interface Language {
-  code: string;
-  name: string;
-  flag: string;
+interface SettingsState {
+  language: string;
+  theme: 'light' | 'dark';
+  notifications: {
+    pushEnabled: boolean;
+    emailEnabled: boolean;
+    cargos: boolean;
+    chat: boolean;
+    system: boolean;
+    marketing: boolean;
+    sounds: boolean;
+  };
+  cache: {
+    autoCleanup: boolean;
+    interval: 'daily' | 'weekly' | 'monthly';
+  };
+  display: {
+    compactView: boolean;
+    highContrast: boolean;
+    fontSize: 'small' | 'medium' | 'large';
+  };
 }
-
-const languageOptions: Language[] = [
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-];
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<SettingsState>({
     language: 'ru',
     theme: 'light',
     notifications: {
@@ -73,11 +85,21 @@ const SettingsPage: React.FC = () => {
       fontSize: 'medium',
     },
   });
-
   const [isSaving, setIsSaving] = useState(false);
   const [isChanged, setIsChanged] = useState(false);
   const router = useRouter();
   const { userState } = useUser();
+  const { t, currentLanguage } = useTranslation();
+
+  // Update initial language from user state
+  useEffect(() => {
+    if (userState.language) {
+      setSettings((prev) => ({
+        ...prev,
+        language: userState.language || 'ru',
+      }));
+    }
+  }, [userState.language]);
 
   // Check for changes to enable/disable save button
   useEffect(() => {
@@ -86,18 +108,15 @@ const SettingsPage: React.FC = () => {
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
-
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 800));
-
       // Save to localStorage for demo purposes
       localStorage.setItem('logit_app_settings', JSON.stringify(settings));
-
-      toast.success('Настройки успешно сохранены');
+      toast.success(t('settings.saveSettings'));
       setIsChanged(false);
     } catch (error) {
-      toast.error('Ошибка при сохранении настроек');
+      toast.error(t('common.error'));
       console.error('Settings save error:', error);
     } finally {
       setIsSaving(false);
@@ -107,7 +126,7 @@ const SettingsPage: React.FC = () => {
   const handleReset = () => {
     // Reset to default settings
     setSettings({
-      language: 'ru',
+      language: currentLanguage,
       theme: 'light',
       notifications: {
         pushEnabled: true,
@@ -128,8 +147,7 @@ const SettingsPage: React.FC = () => {
         fontSize: 'medium',
       },
     });
-
-    toast.info('Настройки сброшены до значений по умолчанию');
+    toast.info(t('settings.resetSettings'));
   };
 
   const updateNotificationSettings = (key: string, value: boolean) => {
@@ -162,17 +180,10 @@ const SettingsPage: React.FC = () => {
     });
   };
 
-  const handleLanguageChange = (value: string) => {
-    setSettings({
-      ...settings,
-      language: value,
-    });
-  };
-
   const handleThemeChange = (value: string) => {
     setSettings({
       ...settings,
-      theme: value,
+      theme: value as 'light' | 'dark',
     });
   };
 
@@ -192,7 +203,7 @@ const SettingsPage: React.FC = () => {
           >
             <ArrowLeft className='h-6 w-6' />
           </Button>
-          <h1 className='text-2xl font-bold'>Настройки приложения</h1>
+          <h1 className='text-2xl font-bold'>{t('settings.title')}</h1>
         </div>
 
         <Tabs
@@ -201,18 +212,24 @@ const SettingsPage: React.FC = () => {
           className='mb-6'
         >
           <TabsList className='grid grid-cols-4 mb-6'>
-            <TabsTrigger value='general'>Общие</TabsTrigger>
-            <TabsTrigger value='notifications'>Уведомления</TabsTrigger>
-            <TabsTrigger value='display'>Отображение</TabsTrigger>
-            <TabsTrigger value='system'>Система</TabsTrigger>
+            <TabsTrigger value='general'>{t('settings.general')}</TabsTrigger>
+            <TabsTrigger value='notifications'>
+              {t('common.notifications')}
+            </TabsTrigger>
+            <TabsTrigger value='display'>
+              {t('settings.displaySettings')}
+            </TabsTrigger>
+            <TabsTrigger value='system'>
+              {t('settings.systemSettings')}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value='general' className='space-y-4'>
             <Card>
               <CardHeader>
-                <CardTitle>Основные настройки</CardTitle>
+                <CardTitle>{t('settings.generalSettings')}</CardTitle>
                 <CardDescription>
-                  Настройте основные параметры приложения
+                  {t('settings.generalDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
@@ -221,30 +238,15 @@ const SettingsPage: React.FC = () => {
                     <div className='flex items-center'>
                       <Globe className='h-5 w-5 mr-2 text-blue-500' />
                       <div>
-                        <h4 className='font-medium text-sm'>Язык</h4>
+                        <h4 className='font-medium text-sm'>
+                          {t('settings.language')}
+                        </h4>
                         <p className='text-sm text-gray-500'>
-                          Выберите язык интерфейса
+                          {t('settings.selectLanguage')}
                         </p>
                       </div>
                     </div>
-                    <Select
-                      value={settings.language}
-                      onValueChange={handleLanguageChange}
-                    >
-                      <SelectTrigger className='w-[180px]'>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {languageOptions.map((lang) => (
-                          <SelectItem key={lang.code} value={lang.code}>
-                            <div className='flex items-center'>
-                              <span className='mr-2'>{lang.flag}</span>
-                              <span>{lang.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <LanguageSelector />
                   </div>
                 </div>
 
@@ -259,9 +261,11 @@ const SettingsPage: React.FC = () => {
                         <Moon className='h-5 w-5 mr-2 text-indigo-400' />
                       )}
                       <div>
-                        <h4 className='font-medium text-sm'>Тема</h4>
+                        <h4 className='font-medium text-sm'>
+                          {t('settings.theme')}
+                        </h4>
                         <p className='text-sm text-gray-500'>
-                          Выберите тему оформления
+                          {t('settings.selectTheme')}
                         </p>
                       </div>
                     </div>
@@ -275,7 +279,7 @@ const SettingsPage: React.FC = () => {
                         className='w-24'
                       >
                         <Sun className='h-4 w-4 mr-2' />
-                        Светлая
+                        {t('settings.lightTheme')}
                       </Button>
                       <Button
                         variant={
@@ -286,7 +290,7 @@ const SettingsPage: React.FC = () => {
                         className='w-24'
                       >
                         <Moon className='h-4 w-4 mr-2' />
-                        Тёмная
+                        {t('settings.darkTheme')}
                       </Button>
                     </div>
                   </div>
@@ -295,12 +299,13 @@ const SettingsPage: React.FC = () => {
             </Card>
           </TabsContent>
 
+          {/* Other tabs content... */}
           <TabsContent value='notifications' className='space-y-4'>
             <Card>
               <CardHeader>
-                <CardTitle>Настройки уведомлений</CardTitle>
+                <CardTitle>{t('settings.notificationSettings')}</CardTitle>
                 <CardDescription>
-                  Управляйте уведомлениями и оповещениями
+                  {t('settings.notificationDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
@@ -310,10 +315,10 @@ const SettingsPage: React.FC = () => {
                       <Bell className='h-5 w-5 mr-2 text-blue-500' />
                       <div>
                         <h4 className='font-medium text-sm'>
-                          Push-уведомления
+                          {t('settings.pushNotifications')}
                         </h4>
                         <p className='text-sm text-gray-500'>
-                          Получать уведомления в приложении
+                          {t('settings.receiveNotifications')}
                         </p>
                       </div>
                     </div>
@@ -324,16 +329,15 @@ const SettingsPage: React.FC = () => {
                       }
                     />
                   </div>
-
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center'>
                       <Volume2 className='h-5 w-5 mr-2 text-blue-500' />
                       <div>
                         <h4 className='font-medium text-sm'>
-                          Звуковые уведомления
+                          {t('settings.soundNotifications')}
                         </h4>
                         <p className='text-sm text-gray-500'>
-                          Включить звуки при уведомлениях
+                          {t('settings.enableSounds')}
                         </p>
                       </div>
                     </div>
@@ -349,13 +353,16 @@ const SettingsPage: React.FC = () => {
                 <Separator />
 
                 <div className='space-y-4'>
-                  <h4 className='font-medium text-sm'>Типы уведомлений</h4>
-
+                  <h4 className='font-medium text-sm'>
+                    {t('settings.notificationTypes')}
+                  </h4>
                   <div className='flex items-center justify-between'>
                     <div>
-                      <p className='text-sm'>Грузы и заявки</p>
+                      <p className='text-sm'>
+                        {t('settings.cargosAndRequests')}
+                      </p>
                       <p className='text-xs text-gray-500'>
-                        Уведомления о новых грузах и заявках
+                        {t('settings.cargosNotificationDesc')}
                       </p>
                     </div>
                     <Switch
@@ -365,12 +372,11 @@ const SettingsPage: React.FC = () => {
                       }
                     />
                   </div>
-
                   <div className='flex items-center justify-between'>
                     <div>
-                      <p className='text-sm'>Сообщения</p>
+                      <p className='text-sm'>{t('settings.messages')}</p>
                       <p className='text-xs text-gray-500'>
-                        Уведомления о новых сообщениях
+                        {t('settings.messagesNotificationDesc')}
                       </p>
                     </div>
                     <Switch
@@ -380,12 +386,11 @@ const SettingsPage: React.FC = () => {
                       }
                     />
                   </div>
-
                   <div className='flex items-center justify-between'>
                     <div>
-                      <p className='text-sm'>Системные</p>
+                      <p className='text-sm'>{t('settings.system')}</p>
                       <p className='text-xs text-gray-500'>
-                        Уведомления о статусе системы
+                        {t('settings.systemNotificationDesc')}
                       </p>
                     </div>
                     <Switch
@@ -395,12 +400,11 @@ const SettingsPage: React.FC = () => {
                       }
                     />
                   </div>
-
                   <div className='flex items-center justify-between'>
                     <div>
-                      <p className='text-sm'>Маркетинговые</p>
+                      <p className='text-sm'>{t('settings.marketing')}</p>
                       <p className='text-xs text-gray-500'>
-                        Новости и специальные предложения
+                        {t('settings.marketingNotificationDesc')}
                       </p>
                     </div>
                     <Switch
@@ -418,18 +422,20 @@ const SettingsPage: React.FC = () => {
           <TabsContent value='display' className='space-y-4'>
             <Card>
               <CardHeader>
-                <CardTitle>Настройки отображения</CardTitle>
+                <CardTitle>{t('settings.displaySettings')}</CardTitle>
                 <CardDescription>
-                  Настройте внешний вид приложения
+                  {t('settings.displayDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
                 <div className='space-y-4'>
                   <div className='flex items-center justify-between'>
                     <div>
-                      <p className='text-sm font-medium'>Компактный режим</p>
+                      <p className='text-sm font-medium'>
+                        {t('settings.compactMode')}
+                      </p>
                       <p className='text-xs text-gray-500'>
-                        Уменьшает отступы и размеры элементов
+                        {t('settings.compactModeDesc')}
                       </p>
                     </div>
                     <Switch
@@ -439,14 +445,13 @@ const SettingsPage: React.FC = () => {
                       }
                     />
                   </div>
-
                   <div className='flex items-center justify-between'>
                     <div>
                       <p className='text-sm font-medium'>
-                        Высокая контрастность
+                        {t('settings.highContrast')}
                       </p>
                       <p className='text-xs text-gray-500'>
-                        Увеличивает контрастность текста и элементов
+                        {t('settings.highContrastDesc')}
                       </p>
                     </div>
                     <Switch
@@ -461,7 +466,9 @@ const SettingsPage: React.FC = () => {
                 <Separator />
 
                 <div className='space-y-2'>
-                  <h4 className='font-medium text-sm mb-2'>Размер шрифта</h4>
+                  <h4 className='font-medium text-sm mb-2'>
+                    {t('settings.fontSize')}
+                  </h4>
                   <Select
                     value={settings.display.fontSize}
                     onValueChange={(value: any) =>
@@ -472,9 +479,15 @@ const SettingsPage: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='small'>Маленький</SelectItem>
-                      <SelectItem value='medium'>Средний</SelectItem>
-                      <SelectItem value='large'>Большой</SelectItem>
+                      <SelectItem value='small'>
+                        {t('settings.small')}
+                      </SelectItem>
+                      <SelectItem value='medium'>
+                        {t('settings.medium')}
+                      </SelectItem>
+                      <SelectItem value='large'>
+                        {t('settings.large')}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -485,9 +498,9 @@ const SettingsPage: React.FC = () => {
           <TabsContent value='system' className='space-y-4'>
             <Card>
               <CardHeader>
-                <CardTitle>Системные настройки</CardTitle>
+                <CardTitle>{t('settings.systemSettings')}</CardTitle>
                 <CardDescription>
-                  Управление кэшем и системными параметрами
+                  {t('settings.systemDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
@@ -497,10 +510,10 @@ const SettingsPage: React.FC = () => {
                       <RefreshCw className='h-5 w-5 mr-2 text-blue-500' />
                       <div>
                         <h4 className='font-medium text-sm'>
-                          Автоочистка кэша
+                          {t('settings.autoCacheCleanup')}
                         </h4>
                         <p className='text-sm text-gray-500'>
-                          Периодически очищать кэш приложения
+                          {t('settings.autoCacheDesc')}
                         </p>
                       </div>
                     </div>
@@ -511,7 +524,6 @@ const SettingsPage: React.FC = () => {
                       }
                     />
                   </div>
-
                   {settings.cache.autoCleanup && (
                     <div className='ml-7 pl-2'>
                       <Select
@@ -524,24 +536,29 @@ const SettingsPage: React.FC = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value='daily'>Ежедневно</SelectItem>
-                          <SelectItem value='weekly'>Еженедельно</SelectItem>
-                          <SelectItem value='monthly'>Ежемесячно</SelectItem>
+                          <SelectItem value='daily'>
+                            {t('settings.daily')}
+                          </SelectItem>
+                          <SelectItem value='weekly'>
+                            {t('settings.weekly')}
+                          </SelectItem>
+                          <SelectItem value='monthly'>
+                            {t('settings.monthly')}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   )}
                 </div>
-
                 <div className='pt-4'>
                   <Button
                     variant='outline'
                     className='w-full'
                     onClick={() => {
-                      toast.success('Кэш очищен');
+                      toast.success(t('settings.clearCacheNow'));
                     }}
                   >
-                    Очистить кэш сейчас
+                    {t('settings.clearCacheNow')}
                   </Button>
                 </div>
 
@@ -549,7 +566,7 @@ const SettingsPage: React.FC = () => {
 
                 <div className='space-y-2'>
                   <h4 className='font-medium text-sm mb-2'>
-                    Версия приложения
+                    {t('settings.appVersion')}
                   </h4>
                   <p className='text-sm text-gray-500'>
                     1.3.5 (build 2025.03.16)
@@ -557,12 +574,10 @@ const SettingsPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-
             <div className='flex justify-between pt-4'>
               <Button variant='outline' onClick={handleReset}>
-                Сбросить настройки
+                {t('settings.resetSettings')}
               </Button>
-
               <Button
                 onClick={handleSaveSettings}
                 disabled={!isChanged || isSaving}
@@ -571,12 +586,12 @@ const SettingsPage: React.FC = () => {
                 {isSaving ? (
                   <>
                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                    Сохранение...
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
                     <Save className='mr-2 h-4 w-4' />
-                    Сохранить
+                    {t('common.save')}
                   </>
                 )}
               </Button>
@@ -584,7 +599,6 @@ const SettingsPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </motion.div>
-
       <NavigationMenu
         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
       />

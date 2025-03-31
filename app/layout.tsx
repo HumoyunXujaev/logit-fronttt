@@ -1,17 +1,19 @@
 'use client';
-
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppProvider } from '@/contexts/AppContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
 import { LoadingProvider } from '@/components/LoadingProvider';
 import { ToastProvider } from '@/components/ToastProvider';
+import { TranslationProvider } from '@/contexts/i18n';
 import Script from 'next/script';
 import { UserProvider } from '@/contexts/UserContext';
 import UserSwitcher from '@/components/UserSwitcher';
+import { Suspense } from 'react';
+import { ApiInitializer } from '@/components/ApiInitializer';
 
 const inter = Inter({ subsets: ['latin'] });
+
 export default function RootLayout({
   children,
 }: {
@@ -29,14 +31,17 @@ export default function RootLayout({
         <ErrorBoundary>
           <AppProvider>
             <UserProvider>
-              {/* <ThemeProvider> */}
-              <LoadingProvider>
-                <ToastProvider />
-                <UserSwitcher />
-                {children}
-              </LoadingProvider>
+              <TranslationProvider>
+                <Suspense>
+                  <LoadingProvider>
+                    <ApiInitializer />
+                    <ToastProvider />
+                    <UserSwitcher />
+                    {children}
+                  </LoadingProvider>
+                </Suspense>
+              </TranslationProvider>
             </UserProvider>
-            {/* </ThemeProvider> */}
           </AppProvider>
         </ErrorBoundary>
       </body>

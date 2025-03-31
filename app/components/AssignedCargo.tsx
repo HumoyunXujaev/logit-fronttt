@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/i18n';
 
 interface AssignedCargoResponse {
   results: AssignedCargo[];
@@ -52,6 +53,7 @@ export default function AssignedCargosSection() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [action, setAction] = useState<'accept' | 'reject' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchAssignedCargos();
@@ -61,12 +63,14 @@ export default function AssignedCargosSection() {
     try {
       setIsLoading(true);
       const response = await api.get('/cargo/cargos/', {
-        params: { status: 'assigned', assigned_to: 'me' },
+        params: {
+          status: 'assigned',
+          assigned_to: 'me',
+        },
       });
       setAssignedCargos(response);
-      console.log(response, 'assign');
     } catch (error) {
-      toast.error('Ошибка при загрузке назначенных грузов');
+      toast.error(t('cargo.errorLoadingAssignedCargos'));
       console.error('Fetch assigned cargos error:', error);
     } finally {
       setIsLoading(false);
@@ -84,7 +88,6 @@ export default function AssignedCargosSection() {
 
   const handleConfirm = async () => {
     if (!selectedCargo || !action) return;
-
     try {
       setIsSubmitting(true);
       await api.post(`/cargo/cargos/${selectedCargo.id}/accept_assignment/`, {
@@ -92,13 +95,15 @@ export default function AssignedCargosSection() {
       });
 
       toast.success(
-        action === 'accept' ? 'Груз успешно принят' : 'Груз отклонен'
+        action === 'accept'
+          ? t('cargo.cargoAcceptedSuccessfully')
+          : t('cargo.cargoRejectedSuccessfully')
       );
 
       await fetchAssignedCargos();
       setShowConfirmDialog(false);
     } catch (error) {
-      toast.error('Ошибка при обработке груза');
+      toast.error(t('cargo.errorProcessingCargo'));
       console.error('Cargo action error:', error);
     } finally {
       setIsSubmitting(false);
@@ -120,12 +125,11 @@ export default function AssignedCargosSection() {
   const assignedddCargos = assignedCargos.results.filter(
     (c) => c.status !== 'pending'
   );
-  console.log(assignedddCargos, 'tttt');
 
   return (
     <div className='mb-8'>
       <h2 className='text-xl font-semibold text-white mb-4'>
-        Назначенные грузы
+        {t('assignedCargo.assignedCargos')}
       </h2>
       <div className='space-y-4'>
         {assignedCargos?.results?.map((cargo) => (
@@ -137,61 +141,68 @@ export default function AssignedCargosSection() {
                     <div>
                       <h3 className='font-bold text-lg'>{cargo?.title}</h3>
                       <p className='text-sm text-gray-600'>
-                        От:{' '}
+                        {t('assignedCargo.from')}{' '}
                         {cargo?.owner?.company_name || cargo?.owner?.full_name}
                       </p>
                       <p className='text-sm text-gray-600'>
-                        Назначен (Логист): {cargo?.managed_by?.full_name}
+                        {t('assignedCargo.assignedBy')}{' '}
+                        {cargo?.managed_by?.full_name}
                       </p>
                     </div>
                     <Badge variant='secondary'>
                       {cargo?.status === 'assigned'
-                        ? 'Требует подтверждения'
+                        ? t('assignedCargo.requiresConfirmation')
                         : cargo?.status}
                     </Badge>
                   </div>
-
                   <div className='grid grid-cols-2 gap-2 mb-4 text-sm'>
                     <div>
-                      <span className='font-medium'>Маршрут:</span>
+                      <span className='font-medium'>
+                        {t('assignedCargo.route')}
+                      </span>
                       <p>
                         {cargo?.loading_point} → {cargo?.unloading_point}
                       </p>
                     </div>
                     <div>
-                      <span className='font-medium'>Дата загрузки:</span>
+                      <span className='font-medium'>
+                        {t('assignedCargo.loadingDate')}
+                      </span>
                       <p>
                         {new Date(cargo?.loading_date).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
-                      <span className='font-medium'>Груз:</span>
+                      <span className='font-medium'>
+                        {t('assignedCargo.cargo')}
+                      </span>
                       <p>
-                        {cargo?.weight} т
-                        {cargo?.volume && `, ${cargo.volume} м³`}
+                        {cargo?.weight} {t('common.ton')}{' '}
+                        {cargo?.volume && `, ${cargo.volume} m³`}
                       </p>
                     </div>
                     <div>
-                      <span className='font-medium'>Оплата:</span>
+                      <span className='font-medium'>
+                        {t('assignedCargo.payment')}
+                      </span>
                       <p>
-                        {cargo?.payment_method}
+                        {cargo?.payment_method}{' '}
                         {cargo?.price && ` (${cargo?.price} ₽)`}
                       </p>
                     </div>
                   </div>
-
                   {cargo?.status === 'assigned' && (
                     <div className='flex justify-end space-x-2'>
                       <Button
                         variant='outline'
                         onClick={() => handleAction(cargo, 'reject')}
                       >
-                        <XCircle className='h-4 w-4 mr-2' />
-                        Отклонить
+                        <XCircle className='h-4 w-4 mr-2' />{' '}
+                        {t('assignedCargo.reject')}
                       </Button>
                       <Button onClick={() => handleAction(cargo, 'accept')}>
-                        <CheckCircle className='h-4 w-4 mr-2' />
-                        Принять
+                        <CheckCircle className='h-4 w-4 mr-2' />{' '}
+                        {t('assignedCargo.accept')}
                       </Button>
                     </div>
                   )}
@@ -201,12 +212,13 @@ export default function AssignedCargosSection() {
           </>
         ))}
       </div>
-
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {action === 'accept' ? 'Принять груз' : 'Отклонить груз'}
+              {action === 'accept'
+                ? t('assignedCargo.confirmTitle')
+                : t('assignedCargo.rejectTitle')}
             </DialogTitle>
           </DialogHeader>
           <div className='py-4'>
@@ -214,8 +226,8 @@ export default function AssignedCargosSection() {
               <AlertTriangle className='h-5 w-5' />
               <p>
                 {action === 'accept'
-                  ? 'Вы уверены, что хотите принять этот груз?'
-                  : 'Вы уверены, что хотите отклонить этот груз?'}
+                  ? t('assignedCargo.confirmAcceptMessage')
+                  : t('assignedCargo.confirmRejectMessage')}
               </p>
             </div>
             {selectedCargo && (
@@ -234,7 +246,7 @@ export default function AssignedCargosSection() {
               onClick={() => setShowConfirmDialog(false)}
               disabled={isSubmitting}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               variant={action === 'accept' ? 'default' : 'destructive'}
@@ -244,12 +256,12 @@ export default function AssignedCargosSection() {
               {isSubmitting ? (
                 <>
                   <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-                  Обработка...
+                  {t('assignedCargo.processing')}
                 </>
               ) : action === 'accept' ? (
-                'Принять'
+                t('assignedCargo.accept')
               ) : (
-                'Отклонить'
+                t('assignedCargo.reject')
               )}
             </Button>
           </DialogFooter>

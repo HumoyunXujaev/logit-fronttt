@@ -1,6 +1,11 @@
 import axios, { AxiosInstance } from 'axios';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// Explicitly get environment variable in a way that evaluates at runtime
+const getBaseUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  console.log('API URL from env:', apiUrl);
+  return apiUrl || 'http://localhost:8000/api';
+};
 
 export interface Location {
   id: number;
@@ -16,12 +21,15 @@ export interface Location {
 }
 
 export class ApiClient {
-  private static instance: ApiClient;
+  private static instance: ApiClient | null = null;
   private api: AxiosInstance;
 
   private constructor() {
+    const baseUrl = getBaseUrl();
+    console.log('Initializing API client with base URL:', baseUrl);
+
     this.api = axios.create({
-      baseURL: BASE_URL,
+      baseURL: baseUrl,
       headers: {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': '69420',
@@ -31,6 +39,9 @@ export class ApiClient {
     // Request interceptor for adding auth token
     this.api.interceptors.request.use(
       (config) => {
+        // Log the request URL for debugging
+        console.log(`Making request to: ${config.baseURL}${config.url}`);
+
         const token = localStorage.getItem('access_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -73,6 +84,12 @@ export class ApiClient {
       ApiClient.instance = new ApiClient();
     }
     return ApiClient.instance;
+  }
+
+  // Method to reset the instance - useful when environment variables change
+  public static resetInstance(): void {
+    ApiClient.instance = null;
+    console.log('API client instance reset');
   }
 
   // Generic request methods
@@ -264,7 +281,6 @@ export class ApiClient {
       if (data.expiry_date) {
         formData.append('expiry_date', data.expiry_date);
       }
-
       const response = await this.api.post(
         `/vehicles/${vehicleId}/add_document/`,
         formData,
@@ -280,6 +296,7 @@ export class ApiClient {
       throw error;
     }
   }
+
   // Carrier Requests
   public async getCarrierRequests(params?: any) {
     try {
@@ -386,7 +403,6 @@ export class ApiClient {
       formData.append('file', data.file);
       formData.append('type', data.type);
       formData.append('title', data.title);
-
       const response = await this.api.post(
         '/users/upload_document/',
         formData,
@@ -622,9 +638,12 @@ export class ApiClient {
   }
 }
 
-// Reinitialize the API client to apply our interceptors
+// Function to initialize the API client
 export const initApiClient = () => {
+  // Reset the instance first to ensure we get a fresh one with current env vars
+  ApiClient.resetInstance();
   return ApiClient.getInstance();
 };
 
-export const api = ApiClient.getInstance();
+// Export the API client instance
+export const api = initApiClient();
