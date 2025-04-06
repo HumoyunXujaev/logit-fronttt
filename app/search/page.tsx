@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Search, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/contexts/i18n';
 
 interface SearchResult {
   id: string;
@@ -52,6 +52,8 @@ export default function SearchParticipantsAndFirms() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const router = useRouter();
+  const { t } = useTranslation();
+
   const handleSearch = () => {
     setIsSearching(true);
     const results = mockSearchResults.filter(
@@ -101,27 +103,26 @@ export default function SearchParticipantsAndFirms() {
         >
           <ArrowLeft className='h-6 w-6' />
         </Button>
-        <h1 className='text-2xl font-bold'>Поиск участников и фирм</h1>
+        <h1 className='text-2xl font-bold'>{t('search.title')}</h1>
       </div>
-
       <div className='flex mb-4'>
         <Input
           type='text'
-          placeholder='Поиск по коду или фамилии'
+          placeholder={t('search.searchByCodeOrName')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className='mr-2'
         />
         <Button onClick={handleSearch}>
           <Search className='h-4 w-4 mr-2' />
-          Поиск
+          {t('common.search')}
         </Button>
       </div>
-
       {isSearching && searchResults.length === 0 && (
-        <p className='text-center text-gray-600 mt-4'>Ничего не найдено</p>
+        <p className='text-center text-gray-600 mt-4'>
+          {t('search.nothingFound')}
+        </p>
       )}
-
       {isSearching && searchResults.length > 0 && renderSearchResults()}
     </div>
   );

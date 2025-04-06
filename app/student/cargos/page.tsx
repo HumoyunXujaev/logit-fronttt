@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +31,7 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { string } from 'three/src/nodes/TSL.js';
 import Link from 'next/link';
+import { useTranslation } from '@/contexts/i18n';
 
 interface CargoResponse {
   results: Cargo[];
@@ -85,7 +85,6 @@ interface CarrierRequest {
 
 export default function StudentCargosPage() {
   const [iscarrier, setiscarrier] = useState(false);
-
   const [cargos, setCargos] = useState<CargoResponse>({ results: [] });
   const [matchingRequests, setMatchingRequests] = useState<CarrierRequest[]>(
     []
@@ -105,8 +104,8 @@ export default function StudentCargosPage() {
     unloading_point: '',
   });
   const [mycargos, setmycargos] = useState<string[] | null>(null);
-
   const { userState } = useUser();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchCargos();
@@ -142,7 +141,7 @@ export default function StudentCargosPage() {
         }
       }
     } catch (error) {
-      toast.error('Ошибка при загрузке грузов');
+      toast.error(t('common.error'));
       console.error('Fetch cargos error:', error);
     } finally {
       setIsLoading(false);
@@ -166,7 +165,7 @@ export default function StudentCargosPage() {
       console.log(allResponse, 'allres');
       setAllRequests(allResponse);
     } catch (error) {
-      toast.error('Ошибка при загрузке заявок перевозчиков');
+      toast.error(t('common.error'));
       console.error('Fetch carrier requests error:', error);
     } finally {
       setIsLoadingRequests(false);
@@ -178,11 +177,11 @@ export default function StudentCargosPage() {
       await api.post(`/cargo/cargos/${cargoId}/assign_carrier/`, {
         carrier_request: requestId,
       });
-      toast.success('Груз успешно перенаправлен перевозчику');
+      toast.success(t('student.cargos.assignedSuccess'));
       setShowMatchingRequests(false);
       fetchCargos();
     } catch (error) {
-      toast.error('Ошибка при назначении перевозчика');
+      toast.error(t('common.error'));
       console.error('Assign carrier error:', error);
     }
   };
@@ -206,35 +205,37 @@ export default function StudentCargosPage() {
             {cargo?.owner && (
               <p className='text-sm text-gray-600'>
                 {cargo?.owner?.role === 'cargo-owner'
-                  ? 'Грузовладелец'
-                  : 'Экспедитор'}
+                  ? t('reviews.userRoles.cargo-owner')
+                  : t('reviews.userRoles.logistics-company')}
                 : {cargo?.owner?.company_name || cargo?.owner?.full_name}
               </p>
             )}
           </div>
-
-          {mycargos?.includes(cargo.id) && <Badge>ЭТО ВАШ ГРУЗ</Badge>}
-
-          <Badge>{cargo.status}</Badge>
-          <Badge>Новый</Badge>
+          {mycargos?.includes(cargo.id) && (
+            <Badge>{t('student.cargos.yourCargo')}</Badge>
+          )}
+          <Badge>{t(`cargo.status.${cargo.status}`)}</Badge>
+          <Badge>{t('student.cargos.new')}</Badge>
         </div>
-
         <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
           <p>
-            Груз: {cargo.weight} т{cargo.volume ? `, ${cargo.volume} м³` : ''}
-          </p>
-          <p>Тип: {cargo.vehicle_type}</p>
-          <p>
-            Маршрут: {cargo.loading_point} → {cargo.unloading_point}
+            {t('cargo.name')}: {cargo.weight} {t('common.ton')}
+            {cargo.volume ? `, ${cargo.volume} m³` : ''}
           </p>
           <p>
-            Дата загрузки: {new Date(cargo.loading_date).toLocaleDateString()}
+            {t('cargo.vehicleType')}: {t(`cargo.${cargo.vehicle_type}`)}
+          </p>
+          <p>
+            {t('cargo.route')}: {cargo.loading_point} → {cargo.unloading_point}
+          </p>
+          <p>
+            {t('cargo.loadingDate')}:{' '}
+            {new Date(cargo.loading_date).toLocaleDateString()}
           </p>
         </div>
-
         <div className='flex justify-between items-center mt-2'>
           <span className='font-semibold'>
-            {cargo.price ? `${cargo.price} ₽` : 'Цена договорная'}
+            {cargo.price ? `${cargo.price} ₽` : t('cargo.negotiablePrice')}
           </span>
           <span className='text-sm text-gray-500'>
             {new Date(cargo.created_at).toLocaleString()}
@@ -244,52 +245,67 @@ export default function StudentCargosPage() {
     </Card>
   );
 
-  console.log(selectedCargo, 'selectedcargo');
   const renderCargoDetails = () => {
     if (!selectedCargo) return null;
-
     return (
       <Dialog open={showCargoDetails} onOpenChange={setShowCargoDetails}>
         <DialogContent className='max-w-3xl'>
           <DialogHeader>
-            <DialogTitle>Детали груза</DialogTitle>
+            <DialogTitle>{t('cargo.cargoDetails')}</DialogTitle>
           </DialogHeader>
-
           <div className='space-y-4'>
             <div className='grid grid-cols-2 gap-4'>
               <div>
-                <h3 className='font-semibold'>Основная информация</h3>
-                <p>Название: {selectedCargo.title}</p>
-                <p>Описание: {selectedCargo.description}</p>
-                <p>Вес: {selectedCargo.weight} т</p>
+                <h3 className='font-semibold'>{t('cargo.mainInfo')}</h3>
+                <p>
+                  {t('cargo.name')}: {selectedCargo.title}
+                </p>
+                <p>
+                  {t('cargo.description')}: {selectedCargo.description}
+                </p>
+                <p>
+                  {t('cargo.weight')}: {selectedCargo.weight} {t('common.ton')}
+                </p>
                 {selectedCargo.volume && (
-                  <p>Объем: {selectedCargo.volume} м³</p>
+                  <p>
+                    {t('cargo.volume')}: {selectedCargo.volume} m³
+                  </p>
                 )}
               </div>
-
               <div>
-                <h3 className='font-semibold'>Маршрут</h3>
-                <p>Погрузка: {selectedCargo.loading_point}</p>
-                <p>Выгрузка: {selectedCargo.unloading_point}</p>
+                <h3 className='font-semibold'>{t('cargo.route')}</h3>
                 <p>
-                  Дата погрузки:{' '}
+                  {t('cargo.loadingPoint')}: {selectedCargo.loading_point}
+                </p>
+                <p>
+                  {t('cargo.unloadingPoint')}: {selectedCargo.unloading_point}
+                </p>
+                <p>
+                  {t('cargo.loadingDate')}:{' '}
                   {new Date(selectedCargo.loading_date).toLocaleDateString()}
                 </p>
               </div>
             </div>
-
             <div>
-              <h3 className='font-semibold'>Требования</h3>
-              <p>Тип транспорта: {selectedCargo.vehicle_type}</p>
-              <p>Способ оплаты: {selectedCargo.payment_method}</p>
-              {selectedCargo.price && <p>Цена: {selectedCargo.price} ₽</p>}
+              <h3 className='font-semibold'>{t('cargo.requirements')}</h3>
+              <p>
+                {t('cargo.vehicleType')}:{' '}
+                {t(`cargo.${selectedCargo.vehicle_type}`)}
+              </p>
+              <p>
+                {t('cargo.paymentMethod')}: {selectedCargo.payment_method}
+              </p>
+              {selectedCargo.price && (
+                <p>
+                  {t('cargo.price')}: {selectedCargo.price} ₽
+                </p>
+              )}
             </div>
-
             {(selectedCargo.status === 'pending' ||
               selectedCargo.status === 'manager_approved') && (
               <div className='flex justify-end space-x-2 mt-4'>
                 <Button onClick={() => setShowMatchingRequests(true)}>
-                  Найти перевозчика
+                  {t('student.cargos.findCarrier')}
                 </Button>
               </div>
             )}
@@ -307,9 +323,8 @@ export default function StudentCargosPage() {
       >
         <DialogContent className='max-w-4xl'>
           <DialogHeader>
-            <DialogTitle>Подходящие перевозчики</DialogTitle>
+            <DialogTitle>{t('student.cargos.matchingCarriers')}</DialogTitle>
           </DialogHeader>
-
           {isLoadingRequests ? (
             <div className='flex justify-center py-8'>
               <Loader2 className='h-8 w-8 animate-spin' />
@@ -318,7 +333,9 @@ export default function StudentCargosPage() {
             <div className='space-y-4'>
               {matchingRequests?.length > 0 && (
                 <div>
-                  <h3 className='font-semibold mb-2'>Подходящие заявки</h3>
+                  <h3 className='font-semibold mb-2'>
+                    {t('student.cargos.matchingCarriers')}
+                  </h3>
                   <div className='space-y-2'>
                     {matchingRequests?.map((request: any) => (
                       <Card key={request.id}>
@@ -331,7 +348,7 @@ export default function StudentCargosPage() {
                               </h4>
                               <p className='text-sm'>
                                 {request.vehicle.registration_number} -{' '}
-                                {request.vehicle.body_type}
+                                {t(`cargo.${request.vehicle.body_type}`)}
                               </p>
                               <p className='text-sm'>
                                 {request.loading_point} →{' '}
@@ -347,7 +364,7 @@ export default function StudentCargosPage() {
                                 )
                               }
                             >
-                              Выбрать
+                              {t('student.cargos.selectCarrier')}
                             </Button>
                           </div>
                         </CardContent>
@@ -356,9 +373,10 @@ export default function StudentCargosPage() {
                   </div>
                 </div>
               )}
-
               <div>
-                <h3 className='font-semibold mb-2'>Все доступные заявки</h3>
+                <h3 className='font-semibold mb-2'>
+                  {t('student.cargos.allAvailableCarriers')}
+                </h3>
                 <div className='space-y-2'>
                   {allRequests?.results?.map((request) => (
                     <Card key={request.id}>
@@ -371,7 +389,7 @@ export default function StudentCargosPage() {
                             </h4>
                             <p className='text-sm'>
                               {request.vehicle.registration_number} -{' '}
-                              {request.vehicle.body_type}
+                              {t(`cargo.${request.vehicle.body_type}`)}
                             </p>
                             <p className='text-sm'>
                               {request.loading_point} →{' '}
@@ -388,7 +406,7 @@ export default function StudentCargosPage() {
                               )
                             }
                           >
-                            Выбрать
+                            {t('student.cargos.selectCarrier')}
                           </Button>
                         </div>
                       </CardContent>
@@ -414,9 +432,9 @@ export default function StudentCargosPage() {
   if (iscarrier === true) {
     return (
       <div className='min-h-screen bg-gray-100 p-4 flex items-center justify-center'>
-        <Loader2 className='h-8 w-8 animate-spin text-blue-600' /> You don't
-        have enough permissions to access this page
-        <Link href={'/'}>go to home page</Link>
+        <Loader2 className='h-8 w-8 animate-spin text-blue-600' />
+        {t('student.cargos.requiredPermissions')}{' '}
+        <Link href={'/'}>{t('student.cargos.goToHome')}</Link>
       </div>
     );
   }
@@ -424,55 +442,14 @@ export default function StudentCargosPage() {
   return (
     <div className='min-h-screen bg-gray-50 p-4 pb-20'>
       <div className='max-w-6xl mx-auto'>
-        <h1 className='text-2xl font-bold mb-6'>Доступные грузы</h1>
-
-        {/* <div className='mb-6 space-y-4'>
-          <div className='flex gap-4'>
-            <Input
-              placeholder='Поиск грузов...'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className='max-w-sm'
-            />
-            <Button onClick={fetchCargos}>
-              <Search className='h-4 w-4 mr-2' />
-              Поиск
-            </Button>
-          </div>
-
-          <div className='flex gap-4'>
-            <Select
-              value={filters.vehicle_type}
-              onValueChange={(value) =>
-                setFilters((f) => ({ ...f, vehicle_type: value }))
-              }
-            >
-              <SelectTrigger className='w-[200px]'>
-                <SelectValue placeholder='Тип транспорта' />
-              </SelectTrigger>
-              <SelectContent>{/* Add vehicle types */}
-        {/* </SelectContent> */}
-        {/* </Select> */}
-
-        {/* <Button
-              variant='outline'
-              onClick={() =>
-                setFilters({
-                  vehicle_type: '',
-                  loading_point: '',
-                  unloading_point: '',
-                })
-              }
-            >
-              Сбросить фильтры
-            </Button>
-          </div>
-        </div> */}
+        <h1 className='text-2xl font-bold mb-6'>
+          {t('student.cargos.availableCargos')}
+        </h1>
 
         <div className='space-y-4'>
           {cargos?.results?.length === 0 ? (
             <div className='text-center py-8 text-gray-500'>
-              Нет доступных грузов
+              {t('cargo.noCargos')}
             </div>
           ) : (
             cargos?.results?.map(renderCargoCard)
@@ -486,8 +463,6 @@ export default function StudentCargosPage() {
       <NavigationMenu
         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
       />
-
-      {/* <NavigationMenu userRole={userState.role} /> */}
     </div>
   );
 }

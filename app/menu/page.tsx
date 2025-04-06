@@ -51,6 +51,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@radix-ui/react-select';
+import { useTranslation } from '@/contexts/i18n';
 
 interface ProfileField {
   key: string;
@@ -274,14 +275,16 @@ const DocumentsSection = () => {
             <>
               {getDocumentType(viewingDocument.file) === 'image' ? (
                 <img
-                  src={`${'http://localhost:8000/' + viewingDocument.file}`}
+                  src={`${
+                    'https://45.92.173.187:9876/' + viewingDocument.file
+                  }`}
                   alt={viewingDocument.title}
                   className='max-w-full h-auto mx-auto'
                 />
               ) : getDocumentType(viewingDocument.file) === 'pdf' ? (
                 <iframe
                   src={`${
-                    'http://localhost:8000/' + viewingDocument.file
+                    'https://45.92.173.187:9876/' + viewingDocument.file
                   }#toolbar=0`}
                   className='w-full h-[60vh]'
                   title={viewingDocument.title}
@@ -293,7 +296,7 @@ const DocumentsSection = () => {
                     className='mt-4'
                     onClick={() =>
                       window.open(
-                        'http://localhost:8000/' + viewingDocument.file,
+                        'https://45.92.173.187:9876/' + viewingDocument.file,
                         '_blank'
                       )
                     }
@@ -312,7 +315,7 @@ const DocumentsSection = () => {
           <Button
             onClick={() =>
               window.open(
-                'http://localhost:8000/' + viewingDocument?.file,
+                'https://45.92.173.187:9876/' + viewingDocument?.file,
                 '_blank'
               )
             }
@@ -449,6 +452,7 @@ export default function MenuPage() {
   const router = useRouter();
   const { userState, setUserRole, setLanguage, setUserType, logout } =
     useUser();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchUserProfile();
@@ -469,15 +473,10 @@ export default function MenuPage() {
     try {
       setIsLoading(true);
       const userData = await api.getCurrentUser();
-      console.log(userData, 'userdata bro');
       setUserRole(userData.role);
-      // if (userData.role === 'carrier' && userData.is_verified === false) {
-      //   router.push('driver-verification/');
-      // }
       setFormData(userData);
-      console.log(formData);
     } catch (error) {
-      toast.error('Ошибка при загрузке профиля');
+      toast.error(t('common.error'));
       console.error('Error fetching profile:', error);
     } finally {
       setIsLoading(false);
@@ -485,36 +484,35 @@ export default function MenuPage() {
   };
 
   const handleInputChange = (key: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith('image/')) {
-      toast.error('Пожалуйста, загрузите изображение');
+      toast.error(t('fileUpload.uploadError'));
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Размер файла не должен превышать 5MB');
+      toast.error(t('fileUpload.fileTooBig', { size: '5MB' }));
       return;
     }
-
     try {
       setIsUploading(true);
       // Here you would normally upload the file to your server
-      // const formData = new FormData();
-      // formData.append('photo', file);
-      // const response = await api.uploadProfilePhoto(formData);
-
       // For now, just create a local preview
       const previewUrl = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, photo: previewUrl }));
-      toast.success('Фото профиля успешно обновлено');
+      setFormData((prev) => ({
+        ...prev,
+        photo: previewUrl,
+      }));
+      toast.success(t('fileUpload.uploadSuccess'));
     } catch (error) {
-      toast.error('Ошибка при загрузке фото');
+      toast.error(t('fileUpload.uploadError'));
       console.error('Error uploading photo:', error);
     } finally {
       setIsUploading(false);
@@ -523,17 +521,14 @@ export default function MenuPage() {
 
   const handleRemovePhoto = async () => {
     try {
-      // Here you would normally call an API endpoint to remove the photo
-      // await api.removeProfilePhoto();
-
       setFormData((prev) => {
         const newData = { ...prev };
         delete newData.photo;
         return newData;
       });
-      toast.success('Фото профиля удалено');
+      toast.success(t('menu.removePhoto'));
     } catch (error) {
-      toast.error('Ошибка при удалении фото');
+      toast.error(t('common.error'));
       console.error('Error removing photo:', error);
     }
   };
@@ -541,17 +536,19 @@ export default function MenuPage() {
   const handleSaveProfile = async () => {
     try {
       setIsSaving(true);
-      const data = { student_id: formData.telegram_id, ...formData };
-      console.log(data, 'data');
+      const data = {
+        student_id: formData.telegram_id,
+        ...formData,
+      };
       await api.updateProfile(data);
       setUserRole(formData?.role as UserRole);
       setUserType(formData.type as UserType);
       setLanguage(formData.preferred_language as Language);
       setIsEditModalOpen(false);
-      toast.success('Профиль успешно обновлен');
+      toast.success(t('common.save'));
       fetchUserProfile(); // Refresh profile data
     } catch (error) {
-      toast.error('Ошибка при обновлении профиля');
+      toast.error(t('common.error'));
       console.error('Error updating profile:', error);
     } finally {
       setIsSaving(false);
@@ -561,7 +558,7 @@ export default function MenuPage() {
   const handleLogout = () => {
     logout();
     router.push('/');
-    toast.success('Вы успешно вышли из системы');
+    toast.success(t('common.logout'));
   };
 
   const getProfileFields = () => {
@@ -569,47 +566,44 @@ export default function MenuPage() {
       defaultProfiles[formData.role || 'carrier'] || defaultProfiles.carrier
     );
   };
-  console.log(formData, 'formdataa');
 
   const RoleIcon = getRoleIcon(userState.role || 'carrier');
-
   const menuItems = [
     {
       icon: Search,
-      text: 'Поиск участников и список фирм',
+      text: t('menu.searchParticipants'),
       action: () => router.push('/search'),
     },
     {
       icon: MapPin,
-      text: 'Расчет расстояний',
+      text: t('menu.calculateDistance'),
       action: () => router.push('/calculate-distance'),
     },
-    { icon: Heart, text: 'Избранное', action: () => router.push('/favorites') },
+    {
+      icon: Heart,
+      text: t('menu.favorites'),
+      action: () => router.push('/favorites'),
+    },
     {
       icon: FileText,
-      text: 'Инструкции',
+      text: t('menu.instructions'),
       action: () => router.push('/instructions'),
     },
     {
       icon: HelpCircle,
-      text: 'Поддержка',
+      text: t('menu.support'),
       action: () => router.push('/support'),
     },
     {
       icon: Settings,
-      text: 'Настройки приложения',
+      text: t('menu.settings'),
       action: () => router.push('/settings'),
     },
     {
       icon: MessageSquare,
-      text: 'Отзывы',
+      text: t('menu.feedback'),
       action: () => router.push('/reviews'),
     },
-    // {
-    //   icon: Gamepad,
-    //   text: 'Игра',
-    //   action: () => router.push('/game'),
-    // },
   ];
 
   if (isLoading) {
@@ -628,25 +622,25 @@ export default function MenuPage() {
             <Avatar className='h-20 w-20 sm:h-16 sm:w-16 mb-4 sm:mb-0 sm:mr-4'>
               <img
                 src={formData.photo || 'https://i.pravatar.cc/150'}
-                alt={formData.full_name || 'Профиль'}
+                alt={formData.full_name || t('menu.personalInfo')}
                 className='object-cover'
               />
             </Avatar>
             <div>
               <h2 className='text-xl sm:text-2xl font-bold mb-2 sm:mb-1'>
-                {formData.full_name || 'Пользователь'}
+                {formData.full_name || t('menu.personalInfo')}
               </h2>
               <div className='flex items-center justify-center sm:justify-start text-gray-600'>
                 <RoleIcon className='h-4 w-4 mr-1' />
                 <span className='text-sm'>
-                  {formData.role || 'Пользователь'}
+                  {formData.role || t('menu.personalInfo')}
                 </span>
               </div>
               <div className='flex items-center justify-center sm:justify-start text-gray-600'>
                 <span className='text-sm'>
                   {formData.is_verified
-                    ? 'Пользователь Верифицирован'
-                    : 'Пользователь Не Верифицирован'}{' '}
+                    ? t('menu.verified')
+                    : t('menu.notVerified')}{' '}
                 </span>
               </div>
             </div>
@@ -658,12 +652,10 @@ export default function MenuPage() {
             className='mt-4 sm:mt-0'
           >
             <Camera className='h-4 w-4 mr-2' />
-            Изменить
+            {t('menu.editProfile')}
           </Button>
         </div>
-
         <Separator className='my-4' />
-
         <ScrollArea className='h-[calc(100vh-400px)] sm:h-auto pr-4'>
           <div className='space-y-4'>
             {getProfileFields().map((field) => (
@@ -678,14 +670,13 @@ export default function MenuPage() {
             ))}
           </div>
         </ScrollArea>
-
         <Button
           variant='destructive'
           className='w-full mt-6'
           onClick={() => setShowLogoutConfirm(true)}
         >
           <LogOut className='h-5 w-5 mr-2' />
-          Выйти
+          {t('common.logout')}
         </Button>
       </CardContent>
     </Card>
@@ -697,29 +688,29 @@ export default function MenuPage() {
         <Button variant='ghost' onClick={() => router.back()} className='p-2'>
           <ArrowLeft className='h-6 w-6' />
         </Button>
-        <h1 className='text-xl sm:text-2xl font-bold ml-2'>Меню</h1>
+        <h1 className='text-xl sm:text-2xl font-bold ml-2'>
+          {t('common.menu')}
+        </h1>
       </div>
-
       <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center'>
           <Avatar className='h-12 w-12 mr-4'>
             <img
               src={formData.photo || 'https://i.pravatar.cc/150'}
-              alt={formData.full_name || 'Профиль'}
+              alt={formData.full_name || t('menu.personalInfo')}
               className='object-cover'
             />
           </Avatar>
           <div>
             <p className='font-semibold'>
-              {formData.full_name || 'Пользователь'}
+              {formData.full_name || t('menu.personalInfo')}
             </p>
-
             <Button
               variant='link'
               className='p-0 h-auto text-sm'
               onClick={() => setShowProfile(!showProfile)}
             >
-              Личный кабинет
+              {t('menu.myProfile')}
             </Button>
           </div>
         </div>
@@ -732,7 +723,6 @@ export default function MenuPage() {
           <ChevronRight className='h-5 w-5' />
         </Button>
       </div>
-
       {showProfile ? (
         renderProfileContent()
       ) : (
@@ -750,7 +740,6 @@ export default function MenuPage() {
           ))}
         </div>
       )}
-
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent
           className={`${
@@ -760,16 +749,15 @@ export default function MenuPage() {
           } overflow-hidden flex flex-col`}
         >
           <DialogHeader className='px-4 py-3'>
-            <DialogTitle>Редактировать профиль</DialogTitle>
+            <DialogTitle>{t('menu.editProfile')}</DialogTitle>
           </DialogHeader>
-
           <ScrollArea className='flex-grow px-4'>
             <div className='space-y-4 py-4'>
               <div className='flex flex-col items-center justify-center mb-6'>
                 <Avatar className='h-24 w-24 mb-4'>
                   <img
                     src={formData.photo || 'https://i.pravatar.cc/150'}
-                    alt={formData.full_name || 'Профиль'}
+                    alt={formData.full_name || t('menu.personalInfo')}
                     className='object-cover'
                   />
                 </Avatar>
@@ -792,7 +780,9 @@ export default function MenuPage() {
                       className='w-full'
                     >
                       <Camera className='h-4 w-4 mr-2' />
-                      {isUploading ? 'Загрузка...' : 'Изменить фото'}
+                      {isUploading
+                        ? t('common.loading')
+                        : t('menu.changePhoto')}
                     </Button>
                   </div>
                   <Button
@@ -803,11 +793,10 @@ export default function MenuPage() {
                     className='w-full'
                   >
                     <Trash2 className='h-4 w-4 mr-2' />
-                    Удалить фото
+                    {t('menu.removePhoto')}
                   </Button>
                 </div>
               </div>
-
               {getProfileFields().map((field) => (
                 <div key={field.key} className='space-y-2'>
                   <label className='text-sm font-medium'>
@@ -824,13 +813,12 @@ export default function MenuPage() {
                     }
                     required={field.required}
                     className='w-full'
-                    placeholder={`Введите ${field.label.toLowerCase()}`}
+                    placeholder={`${field.label.toLowerCase()}`}
                   />
                 </div>
               ))}
             </div>
           </ScrollArea>
-
           <DialogFooter className='px-4 py-3 mt-2 border-t'>
             <div
               className={`flex ${
@@ -843,7 +831,7 @@ export default function MenuPage() {
                 className={isMobile ? 'w-full' : ''}
                 disabled={isSaving}
               >
-                Отмена
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={handleSaveProfile}
@@ -853,17 +841,16 @@ export default function MenuPage() {
                 {isSaving ? (
                   <>
                     <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-                    Сохранение...
+                    {t('common.loading')}
                   </>
                 ) : (
-                  'Сохранить'
+                  t('common.save')
                 )}
               </Button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       <DocumentsSection />
       <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <DialogContent
@@ -872,31 +859,311 @@ export default function MenuPage() {
           }`}
         >
           <DialogHeader>
-            <DialogTitle>Подтверждение выхода</DialogTitle>
+            <DialogTitle>{t('menu.logoutConfirm')}</DialogTitle>
           </DialogHeader>
-          <p className='py-4'>Вы уверены, что хотите выйти?</p>
+          <p className='py-4'>{t('menu.logoutConfirm')}</p>
           <DialogFooter className={`${isMobile ? 'flex-col gap-2' : ''}`}>
             <Button
               variant='outline'
               onClick={() => setShowLogoutConfirm(false)}
               className={isMobile ? 'w-full' : ''}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               variant='destructive'
               onClick={handleLogout}
               className={isMobile ? 'w-full' : ''}
             >
-              Выйти
+              {t('common.logout')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       <NavigationMenu
         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
       />
     </div>
   );
 }
+
+//   const renderProfileContent = () => (
+//     <Card className='mt-4'>
+//       <CardContent className='p-4'>
+//         <div className='flex flex-col sm:flex-row items-center justify-between mb-6'>
+//           <div className='flex flex-col sm:flex-row items-center text-center sm:text-left'>
+//             <Avatar className='h-20 w-20 sm:h-16 sm:w-16 mb-4 sm:mb-0 sm:mr-4'>
+//               <img
+//                 src={formData.photo || 'https://i.pravatar.cc/150'}
+//                 alt={formData.full_name || 'Профиль'}
+//                 className='object-cover'
+//               />
+//             </Avatar>
+//             <div>
+//               <h2 className='text-xl sm:text-2xl font-bold mb-2 sm:mb-1'>
+//                 {formData.full_name || 'Пользователь'}
+//               </h2>
+//               <div className='flex items-center justify-center sm:justify-start text-gray-600'>
+//                 <RoleIcon className='h-4 w-4 mr-1' />
+//                 <span className='text-sm'>
+//                   {formData.role || 'Пользователь'}
+//                 </span>
+//               </div>
+//               <div className='flex items-center justify-center sm:justify-start text-gray-600'>
+//                 <span className='text-sm'>
+//                   {formData.is_verified
+//                     ? 'Пользователь Верифицирован'
+//                     : 'Пользователь Не Верифицирован'}{' '}
+//                 </span>
+//               </div>
+//             </div>
+//           </div>
+//           <Button
+//             variant='outline'
+//             size='sm'
+//             onClick={() => setIsEditModalOpen(true)}
+//             className='mt-4 sm:mt-0'
+//           >
+//             <Camera className='h-4 w-4 mr-2' />
+//             Изменить
+//           </Button>
+//         </div>
+
+//         <Separator className='my-4' />
+
+//         <ScrollArea className='h-[calc(100vh-400px)] sm:h-auto pr-4'>
+//           <div className='space-y-4'>
+//             {getProfileFields().map((field) => (
+//               <div key={field.key} className='space-y-1'>
+//                 <label className='text-sm font-medium text-gray-500'>
+//                   {field.label}
+//                 </label>
+//                 <p className='text-base break-words'>
+//                   {formData[field.key] || '—'}
+//                 </p>
+//               </div>
+//             ))}
+//           </div>
+//         </ScrollArea>
+
+//         <Button
+//           variant='destructive'
+//           className='w-full mt-6'
+//           onClick={() => setShowLogoutConfirm(true)}
+//         >
+//           <LogOut className='h-5 w-5 mr-2' />
+//           Выйти
+//         </Button>
+//       </CardContent>
+//     </Card>
+//   );
+
+//   return (
+//     <div className='min-h-screen bg-gray-50 p-4 pb-20'>
+//       <div className='flex items-center mb-6'>
+//         <Button variant='ghost' onClick={() => router.back()} className='p-2'>
+//           <ArrowLeft className='h-6 w-6' />
+//         </Button>
+//         <h1 className='text-xl sm:text-2xl font-bold ml-2'>Меню</h1>
+//       </div>
+
+//       <div className='flex items-center justify-between mb-4'>
+//         <div className='flex items-center'>
+//           <Avatar className='h-12 w-12 mr-4'>
+//             <img
+//               src={formData.photo || 'https://i.pravatar.cc/150'}
+//               alt={formData.full_name || 'Профиль'}
+//               className='object-cover'
+//             />
+//           </Avatar>
+//           <div>
+//             <p className='font-semibold'>
+//               {formData.full_name || 'Пользователь'}
+//             </p>
+
+//             <Button
+//               variant='link'
+//               className='p-0 h-auto text-sm'
+//               onClick={() => setShowProfile(!showProfile)}
+//             >
+//               Личный кабинет
+//             </Button>
+//           </div>
+//         </div>
+//         <Button
+//           variant='ghost'
+//           size='sm'
+//           onClick={() => setIsEditModalOpen(true)}
+//           className='p-2'
+//         >
+//           <ChevronRight className='h-5 w-5' />
+//         </Button>
+//       </div>
+
+//       {showProfile ? (
+//         renderProfileContent()
+//       ) : (
+//         <div className='space-y-2'>
+//           {menuItems.map((item, index) => (
+//             <Button
+//               key={index}
+//               variant='ghost'
+//               className='w-full justify-start p-4 h-auto text-left'
+//               onClick={item.action}
+//             >
+//               <item.icon className='h-5 w-5 mr-3 flex-shrink-0' />
+//               <span className='line-clamp-1'>{item.text}</span>
+//             </Button>
+//           ))}
+//         </div>
+//       )}
+
+//       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+//         <DialogContent
+//           className={`${
+//             isMobile
+//               ? 'w-full h-[100vh] max-w-none m-0 rounded-none'
+//               : 'sm:max-w-[425px]'
+//           } overflow-hidden flex flex-col`}
+//         >
+//           <DialogHeader className='px-4 py-3'>
+//             <DialogTitle>Редактировать профиль</DialogTitle>
+//           </DialogHeader>
+
+//           <ScrollArea className='flex-grow px-4'>
+//             <div className='space-y-4 py-4'>
+//               <div className='flex flex-col items-center justify-center mb-6'>
+//                 <Avatar className='h-24 w-24 mb-4'>
+//                   <img
+//                     src={formData.photo || 'https://i.pravatar.cc/150'}
+//                     alt={formData.full_name || 'Профиль'}
+//                     className='object-cover'
+//                   />
+//                 </Avatar>
+//                 <div className='space-y-2 w-full flex flex-col items-center'>
+//                   <div className='relative w-full'>
+//                     <Input
+//                       type='file'
+//                       accept='image/*'
+//                       onChange={handleImageUpload}
+//                       className='hidden'
+//                       id='photo-upload'
+//                     />
+//                     <Button
+//                       variant='outline'
+//                       size='sm'
+//                       disabled={isUploading}
+//                       onClick={() =>
+//                         document.getElementById('photo-upload')?.click()
+//                       }
+//                       className='w-full'
+//                     >
+//                       <Camera className='h-4 w-4 mr-2' />
+//                       {isUploading ? 'Загрузка...' : 'Изменить фото'}
+//                     </Button>
+//                   </div>
+//                   <Button
+//                     variant='outline'
+//                     size='sm'
+//                     onClick={handleRemovePhoto}
+//                     disabled={!formData.photo}
+//                     className='w-full'
+//                   >
+//                     <Trash2 className='h-4 w-4 mr-2' />
+//                     Удалить фото
+//                   </Button>
+//                 </div>
+//               </div>
+
+//               {getProfileFields().map((field) => (
+//                 <div key={field.key} className='space-y-2'>
+//                   <label className='text-sm font-medium'>
+//                     {field.label}
+//                     {field.required && (
+//                       <span className='text-red-500 ml-1'>*</span>
+//                     )}
+//                   </label>
+//                   <Input
+//                     type={field.type}
+//                     value={formData[field.key] || ''}
+//                     onChange={(e) =>
+//                       handleInputChange(field.key, e.target.value)
+//                     }
+//                     required={field.required}
+//                     className='w-full'
+//                     placeholder={`Введите ${field.label.toLowerCase()}`}
+//                   />
+//                 </div>
+//               ))}
+//             </div>
+//           </ScrollArea>
+
+//           <DialogFooter className='px-4 py-3 mt-2 border-t'>
+//             <div
+//               className={`flex ${
+//                 isMobile ? 'flex-col w-full gap-2' : 'flex-row gap-4'
+//               }`}
+//             >
+//               <Button
+//                 variant='outline'
+//                 onClick={() => setIsEditModalOpen(false)}
+//                 className={isMobile ? 'w-full' : ''}
+//                 disabled={isSaving}
+//               >
+//                 Отмена
+//               </Button>
+//               <Button
+//                 onClick={handleSaveProfile}
+//                 className={isMobile ? 'w-full' : ''}
+//                 disabled={isSaving}
+//               >
+//                 {isSaving ? (
+//                   <>
+//                     <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+//                     Сохранение...
+//                   </>
+//                 ) : (
+//                   'Сохранить'
+//                 )}
+//               </Button>
+//             </div>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+
+//       <DocumentsSection />
+//       <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+//         <DialogContent
+//           className={`${
+//             isMobile ? 'w-[95%] max-w-[95%] mx-auto' : 'sm:max-w-[425px]'
+//           }`}
+//         >
+//           <DialogHeader>
+//             <DialogTitle>Подтверждение выхода</DialogTitle>
+//           </DialogHeader>
+//           <p className='py-4'>Вы уверены, что хотите выйти?</p>
+//           <DialogFooter className={`${isMobile ? 'flex-col gap-2' : ''}`}>
+//             <Button
+//               variant='outline'
+//               onClick={() => setShowLogoutConfirm(false)}
+//               className={isMobile ? 'w-full' : ''}
+//             >
+//               Отмена
+//             </Button>
+//             <Button
+//               variant='destructive'
+//               onClick={handleLogout}
+//               className={isMobile ? 'w-full' : ''}
+//             >
+//               Выйти
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+
+//       <NavigationMenu
+//         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
+//       />
+//     </div>
+//   );
+// }

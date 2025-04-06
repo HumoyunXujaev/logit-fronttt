@@ -678,6 +678,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useTranslation } from '@/contexts/i18n';
 
 // Type definitions for location data
 interface Location {
@@ -794,6 +795,7 @@ export default function CargoPage() {
 
   const { userState } = useUser();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     validateForm();
@@ -814,19 +816,19 @@ export default function CargoPage() {
 
     requiredFields.forEach((field) => {
       if (!formData[field as keyof CargoFormData]) {
-        newErrors[field] = 'Это поле обязательно';
+        newErrors[field] = t('cargo.requiredField');
       }
     });
 
     if (formData.weight <= 0) {
-      newErrors.weight = 'Вес должен быть больше 0';
+      newErrors.weight = t('cargo.weightTooLow');
     }
 
     if (
       formData.payment_method === 'advance' &&
       !formData.payment_details?.advance_payment
     ) {
-      newErrors.advance_payment = 'Укажите сумму аванса';
+      newErrors.advance_payment = t('cargo.requiredField');
     }
 
     setErrors(newErrors);
@@ -836,7 +838,6 @@ export default function CargoPage() {
   const handleInputChange = (name: string, value: any) => {
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-
       // Calculate volume if dimensions are provided
       if (
         ['length', 'width', 'height'].includes(name) &&
@@ -846,7 +847,6 @@ export default function CargoPage() {
       ) {
         updated.volume = updated.length * updated.width * updated.height;
       }
-
       return updated;
     });
   };
@@ -894,7 +894,7 @@ export default function CargoPage() {
       validateForm();
 
       if (!isAllFilled) {
-        toast.error('Пожалуйста, заполните все обязательные поля');
+        toast.error(t('cargo.requiredField'));
         return;
       }
 
@@ -908,19 +908,14 @@ export default function CargoPage() {
           ? Number(formData.unloading_location)
           : null,
       };
-      console.log('Submitting cargo with locations:', {
-        loading_location: submissionData.loading_location,
-        unloading_location: submissionData.unloading_location,
-      });
-      console.log(submissionData, 'submitdata');
 
       const response = await api.createCargo(submissionData);
-      toast.success('Груз успешно создан');
+      toast.success(t('cargo.success'));
       setIsAddingCargo(false);
       setFormData(initialFormData);
       router.push('/my-cargo');
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Ошибка при создании груза');
+      toast.error(error.response?.data?.detail || t('common.error'));
       console.error('Create cargo error:', error);
     } finally {
       setIsSubmitting(false);
@@ -931,10 +926,10 @@ export default function CargoPage() {
     <div className='space-y-4'>
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Название груза*
+          {t('cargo.name')}*
         </label>
         <Input
-          placeholder='Название груза'
+          placeholder={t('cargo.name')}
           value={formData.title}
           onChange={(e) => handleInputChange('title', e.target.value)}
         />
@@ -945,10 +940,12 @@ export default function CargoPage() {
 
       <div className='grid grid-cols-2 gap-4'>
         <div>
-          <label className='block text-sm font-medium mb-2'>Вес (тонн)*</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.weight')}*
+          </label>
           <Input
             type='number'
-            placeholder='Вес'
+            placeholder={t('cargo.weight')}
             value={formData.weight || ''}
             onChange={(e) =>
               handleInputChange('weight', parseFloat(e.target.value))
@@ -959,10 +956,12 @@ export default function CargoPage() {
           )}
         </div>
         <div>
-          <label className='block text-sm font-medium mb-2'>Объем (м³)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.volume')}
+          </label>
           <Input
             type='number'
-            placeholder='Объем'
+            placeholder={t('cargo.volume')}
             value={formData.volume || ''}
             onChange={(e) =>
               handleInputChange('volume', parseFloat(e.target.value))
@@ -973,10 +972,12 @@ export default function CargoPage() {
 
       <div className='grid grid-cols-3 gap-4'>
         <div>
-          <label className='block text-sm font-medium mb-2'>Длина (м)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.length')}
+          </label>
           <Input
             type='number'
-            placeholder='Длина'
+            placeholder={t('cargo.length')}
             value={formData.length || ''}
             onChange={(e) =>
               handleInputChange('length', parseFloat(e.target.value))
@@ -984,10 +985,12 @@ export default function CargoPage() {
           />
         </div>
         <div>
-          <label className='block text-sm font-medium mb-2'>Ширина (м)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.width')}
+          </label>
           <Input
             type='number'
-            placeholder='Ширина'
+            placeholder={t('cargo.width')}
             value={formData.width || ''}
             onChange={(e) =>
               handleInputChange('width', parseFloat(e.target.value))
@@ -995,10 +998,12 @@ export default function CargoPage() {
           />
         </div>
         <div>
-          <label className='block text-sm font-medium mb-2'>Высота (м)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.height')}
+          </label>
           <Input
             type='number'
-            placeholder='Высота'
+            placeholder={t('cargo.height')}
             value={formData.height || ''}
             onChange={(e) =>
               handleInputChange('height', parseFloat(e.target.value))
@@ -1008,9 +1013,11 @@ export default function CargoPage() {
       </div>
 
       <div>
-        <label className='block text-sm font-medium mb-2'>Описание</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.description')}
+        </label>
         <Textarea
-          placeholder='Описание груза'
+          placeholder={t('cargo.description')}
           value={formData.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
         />
@@ -1031,7 +1038,7 @@ export default function CargoPage() {
     const [isLoading, setIsLoading] = useState(false);
     const containerRef = useRef<HTMLInputElement>(null);
 
-    // Обработка клика вне компонента для закрытия выпадающего списка
+    // Handle click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (event: any) => {
         if (
@@ -1041,19 +1048,17 @@ export default function CargoPage() {
           setOpen(false);
         }
       };
-
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }, []);
 
-    // Поиск локаций при вводе
+    // Search locations when typing
     useEffect(() => {
       if (searchQuery.length >= 2) {
         setIsLoading(true);
-        setOpen(true); // Открываем список при вводе
-
+        setOpen(true); // Open list when typing
         const timer = setTimeout(() => {
           api
             .searchLocations(searchQuery)
@@ -1067,7 +1072,6 @@ export default function CargoPage() {
               setIsLoading(false);
             });
         }, 300);
-
         return () => clearTimeout(timer);
       } else {
         setLocations([]);
@@ -1095,26 +1099,24 @@ export default function CargoPage() {
           onFocus={() => searchQuery.length >= 2 && setOpen(true)}
           className={cn(error && 'border-red-500')}
         />
-
-        {/* Показываем выбранное значение если оно есть и поиск пустой */}
+        {/* Show selected value when search is empty */}
         {value.name && searchQuery === '' && (
           <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
             {value.name}
           </div>
         )}
-
         {open && (
           <div className='absolute z-10 w-full mt-1 bg-popover rounded-md border shadow-md'>
             <div className='p-1'>
               {isLoading ? (
                 <div className='p-4 text-center text-sm text-muted-foreground'>
-                  Загрузка...
+                  {t('common.loading')}
                 </div>
               ) : locations.length === 0 ? (
                 <div className='p-4 text-center text-sm text-muted-foreground'>
                   {searchQuery.length < 2
-                    ? 'Введите минимум 2 символа для поиска'
-                    : 'Ничего не найдено'}
+                    ? t('cargo.enterMinimum2Chars')
+                    : t('cargo.nothingFound')}
                 </div>
               ) : (
                 <ScrollArea className='h-[300px]'>
@@ -1138,7 +1140,8 @@ export default function CargoPage() {
                           )}
                           {location.country_name && location.level !== 1 && (
                             <span className='text-muted-foreground'>
-                              , {location.country_name}
+                              {', '}
+                              {location.country_name}
                             </span>
                           )}
                         </p>
@@ -1148,7 +1151,7 @@ export default function CargoPage() {
                           </p>
                         )}
                       </div>
-                      {value.id === location.id && (
+                      {value.id === location.id.toString() && (
                         <Check className='h-4 w-4' />
                       )}
                     </div>
@@ -1158,7 +1161,6 @@ export default function CargoPage() {
             </div>
           </div>
         )}
-
         {error && errorMessage && (
           <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
         )}
@@ -1170,7 +1172,7 @@ export default function CargoPage() {
     <div className='space-y-4'>
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Пункт погрузки*
+          {t('cargo.loadingPoint')}*
         </label>
         <LocationSelector
           value={{
@@ -1181,7 +1183,7 @@ export default function CargoPage() {
             handleInputChange('loading_location', id);
             handleInputChange('loading_point', name);
           }}
-          placeholder='Выберите пункт погрузки'
+          placeholder={t('cargo.enterCity')}
           error={!!errors.loading_point}
           errorMessage={errors.loading_point}
         />
@@ -1189,7 +1191,7 @@ export default function CargoPage() {
 
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Пункт выгрузки*
+          {t('cargo.unloadingPoint')}*
         </label>
         <LocationSelector
           value={{
@@ -1200,18 +1202,20 @@ export default function CargoPage() {
             handleInputChange('unloading_location', id);
             handleInputChange('unloading_point', name);
           }}
-          placeholder='Выберите пункт выгрузки'
+          placeholder={t('cargo.enterCity')}
           error={!!errors.unloading_point}
           errorMessage={errors.unloading_point}
         />
       </div>
 
-      {/* Остальной код для дополнительных точек маршрута */}
+      {/* Additional route points */}
       {formData.additional_points?.map((point, index) => (
         <div key={index} className='flex items-center gap-2'>
           <Input
             placeholder={
-              point.type === 'loading' ? 'Пункт погрузки' : 'Пункт выгрузки'
+              point.type === 'loading'
+                ? t('cargo.loadingPoint')
+                : t('cargo.unloadingPoint')
             }
             value={point.point}
             onChange={(e) => {
@@ -1247,7 +1251,7 @@ export default function CargoPage() {
           handleInputChange('additional_points', newPoints);
         }}
       >
-        <Plus className='h-4 w-4 mr-2' /> Добавить точку маршрута
+        <Plus className='h-4 w-4 mr-2' /> {t('cargo.addPoint')}
       </Button>
     </div>
   );
@@ -1256,7 +1260,7 @@ export default function CargoPage() {
     <div className='space-y-4'>
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Тип транспорта*
+          {t('cargo.vehicleType')}*
         </label>
         <Select
           value={formData.vehicle_type}
@@ -1265,14 +1269,19 @@ export default function CargoPage() {
           <SelectTrigger
             className={errors.vehicle_type ? 'border-red-500' : ''}
           >
-            <SelectValue placeholder='Выберите тип транспорта' />
+            <SelectValue placeholder={t('cargo.selectVehicleType')} />
           </SelectTrigger>
           <SelectContent>
-            {vehicleTypes.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
+            <SelectItem value='tent'>{t('cargo.tent')}</SelectItem>
+            <SelectItem value='refrigerator'>
+              {t('cargo.refrigerator')}
+            </SelectItem>
+            <SelectItem value='isothermal'>{t('cargo.isothermal')}</SelectItem>
+            <SelectItem value='container'>{t('cargo.container')}</SelectItem>
+            <SelectItem value='car_carrier'>
+              {t('cargo.car_carrier')}
+            </SelectItem>
+            <SelectItem value='board'>{t('cargo.board')}</SelectItem>
           </SelectContent>
         </Select>
         {errors.vehicle_type && (
@@ -1281,7 +1290,9 @@ export default function CargoPage() {
       </div>
 
       <div>
-        <label className='block text-sm font-medium mb-2'>Тип погрузки*</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.loadingType')}*
+        </label>
         <Select
           value={formData.loading_type}
           onValueChange={(value) => handleInputChange('loading_type', value)}
@@ -1289,14 +1300,16 @@ export default function CargoPage() {
           <SelectTrigger
             className={errors.loading_type ? 'border-red-500' : ''}
           >
-            <SelectValue placeholder='Выберите тип погрузки' />
+            <SelectValue placeholder={t('cargo.selectLoadingType')} />
           </SelectTrigger>
           <SelectContent>
-            {loadingTypes.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
+            <SelectItem value='ramps'>{t('cargo.ramps')}</SelectItem>
+            <SelectItem value='no_doors'>{t('cargo.no_doors')}</SelectItem>
+            <SelectItem value='side'>{t('cargo.side')}</SelectItem>
+            <SelectItem value='top'>{t('cargo.top')}</SelectItem>
+            <SelectItem value='hydro_board'>
+              {t('cargo.hydro_board')}
+            </SelectItem>
           </SelectContent>
         </Select>
         {errors.loading_type && (
@@ -1309,7 +1322,9 @@ export default function CargoPage() {
   const renderWhenContent = () => (
     <div className='space-y-4'>
       <div>
-        <label className='block text-sm font-medium mb-2'>Дата погрузки*</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.loadingDate')}*
+        </label>
         <Input
           type='date'
           value={formData.loading_date}
@@ -1320,7 +1335,6 @@ export default function CargoPage() {
           <p className='text-sm text-red-500 mt-1'>{errors.loading_date}</p>
         )}
       </div>
-
       <div className='flex items-center space-x-2'>
         <Checkbox
           id='constant'
@@ -1329,7 +1343,7 @@ export default function CargoPage() {
             handleInputChange('is_constant', checked)
           }
         />
-        <label htmlFor='constant'>Постоянный</label>
+        <label htmlFor='constant'>{t('cargo.permanent')}</label>
       </div>
       <div className='flex items-center space-x-2'>
         <Checkbox
@@ -1337,7 +1351,7 @@ export default function CargoPage() {
           checked={formData.is_ready}
           onCheckedChange={(checked) => handleInputChange('is_ready', checked)}
         />
-        <label htmlFor='ready'>Груз готов к отправке</label>
+        <label htmlFor='ready'>{t('cargo.readyForShipment')}</label>
       </div>
     </div>
   );
@@ -1345,7 +1359,9 @@ export default function CargoPage() {
   const renderPaymentContent = () => (
     <div className='space-y-4'>
       <div>
-        <label className='block text-sm font-medium mb-2'>Способ оплаты*</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.paymentMethod')}*
+        </label>
         <Select
           value={formData.payment_method}
           onValueChange={(value) => handleInputChange('payment_method', value)}
@@ -1353,14 +1369,13 @@ export default function CargoPage() {
           <SelectTrigger
             className={errors.payment_method ? 'border-red-500' : ''}
           >
-            <SelectValue placeholder='Выберите способ оплаты' />
+            <SelectValue placeholder={t('cargo.selectPaymentMethod')} />
           </SelectTrigger>
           <SelectContent>
-            {paymentMethods.map((method) => (
-              <SelectItem key={method.value} value={method.value}>
-                {method.label}
-              </SelectItem>
-            ))}
+            <SelectItem value='cash'>{t('cargo.cash')}</SelectItem>
+            <SelectItem value='card'>{t('cargo.card')}</SelectItem>
+            <SelectItem value='transfer'>{t('cargo.transfer')}</SelectItem>
+            <SelectItem value='advance'>{t('cargo.advance')}</SelectItem>
           </SelectContent>
         </Select>
         {errors.payment_method && (
@@ -1369,10 +1384,12 @@ export default function CargoPage() {
       </div>
 
       <div>
-        <label className='block text-sm font-medium mb-2'>Цена</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.price')}
+        </label>
         <Input
           type='number'
-          placeholder='Введите сумму'
+          placeholder={t('cargo.enterAmount')}
           value={formData.price || ''}
           onChange={(e) =>
             handleInputChange('price', parseFloat(e.target.value))
@@ -1383,12 +1400,12 @@ export default function CargoPage() {
       {formData.payment_method === 'advance' && (
         <div>
           <label className='block text-sm font-medium mb-2'>
-            Сумма аванса*
+            {t('cargo.advanceAmount')}*
           </label>
           <div>
             <Input
               type='number'
-              placeholder='Введите сумму аванса'
+              placeholder={t('cargo.enterAdvanceAmount')}
               value={formData.payment_details?.advance_payment || ''}
               onChange={(e) =>
                 handlePaymentDetailsChange(
@@ -1408,7 +1425,9 @@ export default function CargoPage() {
       )}
 
       <div>
-        <label className='block text-sm font-medium mb-2'>Условия оплаты</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.paymentTerms')}
+        </label>
         <Select
           value={formData.payment_details?.payment_terms || ''}
           onValueChange={(value) =>
@@ -1416,19 +1435,25 @@ export default function CargoPage() {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder='Выберите условия оплаты' />
+            <SelectValue placeholder={t('cargo.selectPaymentTerms')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='on_loading'>При погрузке</SelectItem>
-            <SelectItem value='on_unloading'>При выгрузке</SelectItem>
-            <SelectItem value='after_unloading'>После выгрузки</SelectItem>
-            <SelectItem value='delayed'>Отсрочка платежа</SelectItem>
+            <SelectItem value='on_loading'>{t('cargo.on_loading')}</SelectItem>
+            <SelectItem value='on_unloading'>
+              {t('cargo.on_unloading')}
+            </SelectItem>
+            <SelectItem value='after_unloading'>
+              {t('cargo.after_unloading')}
+            </SelectItem>
+            <SelectItem value='delayed'>{t('cargo.delayed')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <label className='block text-sm font-medium mb-2'>Место оплаты</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.paymentLocation')}
+        </label>
         <Select
           value={formData.payment_details?.payment_location || ''}
           onValueChange={(value) =>
@@ -1436,12 +1461,16 @@ export default function CargoPage() {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder='Выберите место оплаты' />
+            <SelectValue placeholder={t('cargo.selectPaymentLocation')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='loading_point'>В пункте погрузки</SelectItem>
-            <SelectItem value='unloading_point'>В пункте выгрузки</SelectItem>
-            <SelectItem value='office'>В офисе</SelectItem>
+            <SelectItem value='loading_point'>
+              {t('cargo.loading_point')}
+            </SelectItem>
+            <SelectItem value='unloading_point'>
+              {t('cargo.unloading_point')}
+            </SelectItem>
+            <SelectItem value='office'>{t('cargo.office')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -1469,8 +1498,8 @@ export default function CargoPage() {
     switch (sectionId) {
       case 'cargo':
         return formData.title
-          ? `${formData.title}, ${formData.weight} т${
-              formData.volume ? `, ${formData.volume} м³` : ''
+          ? `${formData.title}, ${formData.weight} ${t('common.ton')}${
+              formData.volume ? `, ${formData.volume} m³` : ''
             }`
           : '';
       case 'route':
@@ -1479,26 +1508,21 @@ export default function CargoPage() {
           : '';
       case 'transport':
         return formData.vehicle_type
-          ? `${
-              vehicleTypes.find((t) => t.value === formData.vehicle_type)
-                ?.label || ''
-            }, ${
-              loadingTypes.find((t) => t.value === formData.loading_type)
-                ?.label || ''
+          ? `${t(`cargo.${formData.vehicle_type}`)}, ${
+              formData.loading_type ? t(`cargo.${formData.loading_type}`) : ''
             }`
           : '';
       case 'when':
         return formData.loading_date
           ? `${new Date(formData.loading_date).toLocaleDateString()}${
-              formData.is_constant ? ', постоянный' : ''
-            }${formData.is_ready ? ', готов' : ''}`
+              formData.is_constant ? `, ${t('cargo.isConstant')}` : ''
+            }${formData.is_ready ? `, ${t('cargo.isReady')}` : ''}`
           : '';
       case 'payment':
         return formData.payment_method
-          ? `${
-              paymentMethods.find((m) => m.value === formData.payment_method)
-                ?.label || ''
-            }${formData.price ? `, ${formData.price} ₽` : ''}`
+          ? `${t(`cargo.${formData.payment_method}`)}${
+              formData.price ? `, ${formData.price} ₽` : ''
+            }`
           : '';
       default:
         return '';
@@ -1508,15 +1532,14 @@ export default function CargoPage() {
   return (
     <div className='min-h-screen bg-gray-50 p-4 pb-20'>
       <h1 className='text-3xl font-bold text-center mb-6 text-gray-800'>
-        Мои грузы
+        {t('cargo.title')}
       </h1>
-
       <div className='space-y-4 mb-8'>
         <Button
           onClick={() => setIsAddingCargo(true)}
           className='w-full bg-blue-600 hover:bg-blue-700 text-white'
         >
-          <Plus className='mr-2 h-4 w-4' /> Добавить груз
+          <Plus className='mr-2 h-4 w-4' /> {t('cargo.addCargo')}
         </Button>
         <Button
           variant='outline'
@@ -1525,7 +1548,7 @@ export default function CargoPage() {
             router.push('/my-cargo');
           }}
         >
-          <TruckIcon className='mr-2 h-4 w-4' /> Мои грузы{' '}
+          <TruckIcon className='mr-2 h-4 w-4' /> {t('cargo.myCargos')}
         </Button>
       </div>
 
@@ -1533,14 +1556,13 @@ export default function CargoPage() {
         <Card className='mb-8 shadow-lg'>
           <CardContent className='p-6'>
             <h2 className='text-2xl font-semibold mb-4 text-gray-800'>
-              Добавить груз
+              {t('cargo.addCargo')}
             </h2>
             <ScrollArea className='h-[60vh]'>
               <div className='space-y-4'>
                 {sections.map((section) => {
                   const Icon = section.icon;
                   const summary = getSectionSummary(section.id);
-
                   return (
                     <Button
                       key={section.id}
@@ -1553,7 +1575,9 @@ export default function CargoPage() {
                     >
                       <Icon className='mr-2 h-5 w-5' />
                       <div className='flex flex-col items-start'>
-                        <span className='font-semibold'>{section.title}</span>
+                        <span className='font-semibold'>
+                          {t(section.title)}
+                        </span>
                         {summary && (
                           <span className='text-sm text-gray-500 mt-1 truncate w-full'>
                             {summary}
@@ -1568,7 +1592,6 @@ export default function CargoPage() {
                 })}
               </div>
             </ScrollArea>
-
             {isAllFilled && (
               <Button
                 onClick={handleSubmit}
@@ -1578,10 +1601,10 @@ export default function CargoPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                    Создание...
+                    {t('cargo.creating')}
                   </>
                 ) : (
-                  'Опубликовать'
+                  t('cargo.publish')
                 )}
               </Button>
             )}
@@ -1593,7 +1616,8 @@ export default function CargoPage() {
         <DialogContent className='sm:max-w-[425px]'>
           <DialogHeader>
             <DialogTitle>
-              {sections.find((s) => s.id === activeSection)?.title}
+              {sections.find((s) => s.id === activeSection)?.title &&
+                t(sections.find((s) => s.id === activeSection)?.title || '')}
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className='max-h-[60vh] pr-4'>
@@ -1612,7 +1636,7 @@ export default function CargoPage() {
                 }
               }}
             >
-              <X className='mr-2 h-4 w-4' /> Очистить
+              <X className='mr-2 h-4 w-4' /> {t('cargo.clear')}
             </Button>
             <Button
               onClick={() => {
@@ -1626,7 +1650,7 @@ export default function CargoPage() {
                 }
               }}
             >
-              Далее <Plus className='ml-2 h-4 w-4' />
+              {t('cargo.next')} <Plus className='ml-2 h-4 w-4' />
             </Button>
           </div>
         </DialogContent>
@@ -1640,7 +1664,7 @@ export default function CargoPage() {
             }}
             className='w-full bg-blue-600 hover:bg-blue-700 text-white'
           >
-            <BoxIcon className='mr-2 h-4 w-4' /> Смотреть все
+            <BoxIcon className='mr-2 h-4 w-4' /> {t('cargo.viewAll')}
           </Button>
         </div>
       )}

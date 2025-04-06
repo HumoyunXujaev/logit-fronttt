@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileUpload } from '@/components/FileUpload';
@@ -14,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AuthService } from '@/lib/auth';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/i18n';
 
 type VerificationStage = 'initial' | 'uploading' | 'verifying' | 'result';
 
@@ -36,27 +36,13 @@ const DriverVerificationPage: React.FC = () => {
   const [verificationResult, setVerificationResult] =
     useState<VerificationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // const handleDocumentUpload = async (documentData: any, type: string) => {
-  //   try {
-  //     const response = await AuthService.uploadDocument(
-  //       documentData.file,
-  //       type
-  //     );
-  //     setDocuments((prev) => [...prev, response]);
-  //     toast.success('Документ успешно загружен');
-  //   } catch (error) {
-  //     toast.error('Ошибка при загрузке документа');
-  //     console.error('Document upload error:', error);
-  //   }
-  // };
+  const { t } = useTranslation();
 
   const handleVerification = async () => {
     if (documents.length < 2) {
-      toast.error('Необходимо загрузить обе стороны водительских прав');
+      toast.error(t('verification.licenseRequired'));
       return;
     }
-
     setStage('verifying');
     setIsModalOpen(false);
     setIsLoading(true);
@@ -64,17 +50,16 @@ const DriverVerificationPage: React.FC = () => {
     try {
       // Имитация процесса проверки
       await new Promise((resolve) => setTimeout(resolve, 2000));
-
       const isApproved = Math.random() > 0.1;
       setVerificationResult({
         isApproved,
         message: isApproved
-          ? 'Ваша категория водительского права соответствует нашим требованиям. Теперь можете пройти идентификацию через платформу MyID.'
-          : "К сожалению, ваша категория водительского права не соответствует нашим требованиям.\n Чтобы получить разрешение на прохождение идентификации, категория водительских прав должна быть как минимум 'C'. ",
+          ? t('verification.success')
+          : t('verification.failure'),
       });
       setStage('result');
     } catch (error) {
-      toast.error('Ошибка при проверке документов');
+      toast.error(t('verification.verificationError'));
       console.error('Verification error:', error);
       setStage('initial');
     } finally {
@@ -108,18 +93,16 @@ const DriverVerificationPage: React.FC = () => {
             className='bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center'
           >
             <h1 className='text-2xl font-bold mb-6 text-blue-800'>
-              Уважаемый перевозчик
+              {t('verification.title')}
             </h1>
             <p className='mb-8 text-gray-600'>
-              Чтобы пользоваться нашим сервисом бесплатно, просим вас
-              подтвердить вашу личность. Для этого сначала загрузите ваши
-              водительские права.
+              {t('verification.verificationRequest')}
             </p>
             <Button
               onClick={() => setIsModalOpen(true)}
               className='bg-blue-500 hover:bg-blue-600 text-white'
             >
-              Загрузить водительские права
+              {t('verification.uploadLicense')}
             </Button>
           </motion.div>
         )}
@@ -136,11 +119,9 @@ const DriverVerificationPage: React.FC = () => {
           >
             <Loader2 className='animate-spin h-16 w-16 text-blue-500 mx-auto mb-4' />
             <h2 className='text-xl font-semibold text-blue-800'>
-              Проверка документов
+              {t('verification.verifying')}
             </h2>
-            <p className='text-gray-600 mt-2'>
-              Пожалуйста, подождите. Мы проверяем ваши документы.
-            </p>
+            <p className='text-gray-600 mt-2'>{t('verification.pleaseWait')}</p>
           </motion.div>
         )}
 
@@ -155,7 +136,7 @@ const DriverVerificationPage: React.FC = () => {
             className='bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center'
           >
             <h1 className='text-2xl font-bold mb-6 text-blue-800'>
-              Результат проверки
+              {t('verification.verificationResult')}
             </h1>
             <p
               className={`mb-8 ${
@@ -173,7 +154,7 @@ const DriverVerificationPage: React.FC = () => {
                   router.push('/registration-confirm');
                 }}
               >
-                Перейти к MyID
+                {t('verification.proceedToMyID')}
               </Button>
             )}
           </motion.div>
@@ -184,37 +165,21 @@ const DriverVerificationPage: React.FC = () => {
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle className='text-center text-xl font-semibold text-blue-800'>
-              Загрузка водительских прав
+              {t('verification.uploadLicense')}
             </DialogTitle>
           </DialogHeader>
           <div className='space-y-6'>
             <div>
               <label className='block text-sm font-medium mb-2 text-gray-700'>
-                Передняя сторона
+                {t('verification.frontSide')}
               </label>
-              {/* <FileUpload
-                type='driver_license_front'
-                onUpload={(data) =>
-                  handleDocumentUpload(data, 'driver_license_front')
-                }
-                allowedTypes={['image/jpeg', 'image/png']}
-                maxSize={5 * 1024 * 1024}
-                label='Загрузить переднюю сторону'
-              /> */}
+              {/* <FileUpload type='driver_license_front' onUpload={(data) => handleDocumentUpload(data, 'driver_license_front')} allowedTypes={['image/jpeg', 'image/png']} maxSize={5 * 1024 * 1024} label='Загрузить переднюю сторону' /> */}
             </div>
             <div>
               <label className='block text-sm font-medium mb-2 text-gray-700'>
-                Задняя сторона
+                {t('verification.backSide')}
               </label>
-              {/* <FileUpload
-                type='driver_license_back'
-                onUpload={(data) =>
-                  handleDocumentUpload(data, 'driver_license_back')
-                }
-                allowedTypes={['image/jpeg', 'image/png']}
-                maxSize={5 * 1024 * 1024}
-                label='Загрузить заднюю сторону'
-              /> */}
+              {/* <FileUpload type='driver_license_back' onUpload={(data) => handleDocumentUpload(data, 'driver_license_back')} allowedTypes={['image/jpeg', 'image/png']} maxSize={5 * 1024 * 1024} label='Загрузить заднюю сторону' /> */}
             </div>
             <Button
               onClick={handleVerification}
@@ -224,10 +189,10 @@ const DriverVerificationPage: React.FC = () => {
               {isLoading ? (
                 <>
                   <Loader2 className='animate-spin h-4 w-4 mr-2' />
-                  Проверка...
+                  {t('common.loading')}
                 </>
               ) : (
-                'Отправить на проверку'
+                t('verification.submitVerification')
               )}
             </Button>
           </div>

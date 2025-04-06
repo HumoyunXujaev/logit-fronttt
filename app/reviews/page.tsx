@@ -27,6 +27,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/i18n';
 
 interface Rating {
   id: string;
@@ -90,6 +91,7 @@ export default function ReviewsPage() {
 
   const { userState } = useUser();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchRatings();
@@ -97,6 +99,7 @@ export default function ReviewsPage() {
 
   const tgid =
     typeof window !== 'undefined' ? localStorage.getItem('telegram_id') : '';
+
   const fetchRatings = async () => {
     try {
       setIsLoading(true);
@@ -109,7 +112,7 @@ export default function ReviewsPage() {
         (r: any) => r.from_user.telegram_id !== tgid
       );
       setReceivedRatings(receivedr || []);
-      console.log(receivedr, 'rece');
+
       // Fetch ratings given by current user
       const given = await api.get('/core/ratings/', {
         params: { given: true },
@@ -117,8 +120,6 @@ export default function ReviewsPage() {
       const givvenr = given.results.filter(
         (r: any) => r.to_user.telegram_id !== tgid
       );
-      console.log(givvenr, 'given');
-
       setGivenRatings(givvenr || []);
 
       // Fetch completed cargos that need rating
@@ -130,9 +131,6 @@ export default function ReviewsPage() {
           r.status === 'completed' &&
           !givenRatings.some((gr: any) => gr.id === r.id)
       );
-
-      console.log(pendingrating, 'rrrrr');
-      console.log(pendingResponse, 'pending');
       setPendingRatings(pendingrating || []);
 
       // Fetch user's average rating
@@ -142,7 +140,7 @@ export default function ReviewsPage() {
       }
     } catch (error) {
       console.error('Error fetching ratings:', error);
-      toast.error('Не удалось загрузить отзывы');
+      toast.error(t('common.error'));
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +149,6 @@ export default function ReviewsPage() {
   const handleRateUser = (cargo: CompletedCargo) => {
     // Determine who to rate based on user role
     let userToRate = null;
-
     if (userState.role === 'carrier') {
       userToRate = cargo.owner;
     } else if (userState.role === 'cargo-owner') {
@@ -165,7 +162,7 @@ export default function ReviewsPage() {
     }
 
     if (!userToRate) {
-      toast.error('Не удалось определить пользователя для оценки');
+      toast.error(t('reviews.userToRateError'));
       return;
     }
 
@@ -179,15 +176,13 @@ export default function ReviewsPage() {
 
     try {
       setIsSubmitting(true);
-
       await api.post('/core/ratings/', {
         to_user: selectedUser.telegram_id,
         score: ratingScore,
         comment: ratingComment,
         cargo_id: selectedCargo.id,
       });
-
-      toast.success('Отзыв успешно отправлен');
+      toast.success(t('reviews.ratingSuccess'));
       setShowRatingDialog(false);
       setRatingScore(5);
       setRatingComment('');
@@ -196,7 +191,7 @@ export default function ReviewsPage() {
       fetchRatings();
     } catch (error) {
       console.error('Error submitting rating:', error);
-      toast.error('Не удалось отправить отзыв');
+      toast.error(t('reviews.ratingError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -237,7 +232,9 @@ export default function ReviewsPage() {
                   : rating.to_user.full_name}
               </h3>
               <p className='text-sm text-gray-600'>
-                {isReceived ? rating.from_user.role : rating.to_user.role}
+                {isReceived
+                  ? t(`reviews.userRoles.${rating.from_user.role}`)
+                  : t(`reviews.userRoles.${rating.to_user.role}`)}
               </p>
             </div>
           </div>
@@ -276,7 +273,10 @@ export default function ReviewsPage() {
               </Avatar>
               <div>
                 <h3 className='font-semibold'>{userToRate?.full_name}</h3>
-                <p className='text-sm text-gray-600'>{userToRate?.role}</p>
+                <p className='text-sm text-gray-600'>
+                  {userToRate?.role &&
+                    t(`reviews.userRoles.${userToRate.role}`)}
+                </p>
               </div>
             </div>
             <div className='flex flex-col items-end'>
@@ -288,38 +288,10 @@ export default function ReviewsPage() {
           </div>
           <div className='flex justify-end mt-4'>
             <Button onClick={() => handleRateUser(cargo)}>
-              <Star className='h-4 w-4 mr-2' />
-              Оставить отзыв
+              <Star className='h-4 w-4 mr-2' /> {t('reviews.leaveReview')}
             </Button>
           </div>
         </CardContent>
-        {/* <CardContent className='p-4'>
-          <div className='flex justify-between items-start mb-2'>
-            <div>
-              <h3 className='font-semibold'>{cargo.title}</h3>
-              <p className='text-sm text-gray-600'>
-                {cargo.loading_point} → {cargo.unloading_point}
-              </p>
-              {userToRate && (
-                <p className='text-sm mt-1'>
-                  <span className='text-gray-600'>Пользователь: </span>
-                  <span className='font-medium'>{userToRate.full_name}</span>
-                </p>
-              )}
-            </div>
-            <span className='text-sm text-gray-500'>
-              {cargo.completed_at
-                ? new Date(cargo.completed_at).toLocaleDateString()
-                : 'Завершен'}
-            </span>
-          </div>
-          <div className='flex justify-end mt-4'>
-            <Button onClick={() => handleRateUser(cargo)}>
-              <Star className='h-4 w-4 mr-2' />
-              Оставить отзыв
-            </Button>
-          </div>
-        </CardContent> */}
       </Card>
     );
   };
@@ -343,13 +315,15 @@ export default function ReviewsPage() {
           >
             <ArrowLeft className='h-6 w-6' />
           </Button>
-          <h1 className='text-2xl font-bold'>Отзывы и рейтинг</h1>
+          <h1 className='text-2xl font-bold'>{t('reviews.title')}</h1>
         </div>
 
         {userAverageRating !== null && (
           <Card className='mb-6'>
             <CardContent className='p-4 flex flex-col items-center'>
-              <h2 className='text-lg font-semibold mb-2'>Ваш рейтинг</h2>
+              <h2 className='text-lg font-semibold mb-2'>
+                {t('reviews.yourRating')}
+              </h2>
               <div className='flex items-center'>
                 <span className='text-3xl font-bold mr-3'>
                   {Number(userAverageRating).toFixed(1)}
@@ -357,7 +331,7 @@ export default function ReviewsPage() {
                 {renderStars(userAverageRating)}
               </div>
               <p className='text-sm text-gray-600 mt-2'>
-                На основе {receivedRatings?.length} отзывов
+                {t('reviews.basedOn', { count: receivedRatings?.length })}
               </p>
             </CardContent>
           </Card>
@@ -370,15 +344,15 @@ export default function ReviewsPage() {
         >
           <TabsList className='grid w-full grid-cols-3'>
             <TabsTrigger value='received'>
-              Полученные{' '}
+              {t('reviews.received')}{' '}
               {receivedRatings.length > 0 && `(${receivedRatings.length})`}
             </TabsTrigger>
             <TabsTrigger value='given'>
-              Оставленные{' '}
+              {t('reviews.given')}{' '}
               {givenRatings.length > 0 && `(${givenRatings.length})`}
             </TabsTrigger>
             <TabsTrigger value='pending'>
-              Можете оставить
+              {t('reviews.canLeave')}{' '}
               {pendingRatings.length > 0 && `(${pendingRatings.length})`}
             </TabsTrigger>
           </TabsList>
@@ -389,7 +363,7 @@ export default function ReviewsPage() {
                 receivedRatings.map((rating) => renderRatingCard(rating, true))
               ) : (
                 <div className='text-center py-8 text-gray-500'>
-                  У вас пока нет полученных отзывов
+                  {t('reviews.noReceivedReviews')}
                 </div>
               )}
             </ScrollArea>
@@ -401,7 +375,7 @@ export default function ReviewsPage() {
                 givenRatings.map((rating) => renderRatingCard(rating, false))
               ) : (
                 <div className='text-center py-8 text-gray-500'>
-                  Вы пока не оставили ни одного отзыва
+                  {t('reviews.noGivenReviews')}
                 </div>
               )}
             </ScrollArea>
@@ -413,7 +387,7 @@ export default function ReviewsPage() {
                 pendingRatings.map((cargo) => renderPendingRatingCard(cargo))
               ) : (
                 <div className='text-center py-8 text-gray-500'>
-                  Нет заявок, требующих отзыва
+                  {t('reviews.noReviewsToLeave')}
                 </div>
               )}
             </ScrollArea>
@@ -425,7 +399,7 @@ export default function ReviewsPage() {
       <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Оставить отзыв</DialogTitle>
+            <DialogTitle>{t('reviews.leaveReview')}</DialogTitle>
           </DialogHeader>
           <div className='py-4'>
             {selectedUser && (
@@ -437,7 +411,10 @@ export default function ReviewsPage() {
                 </Avatar>
                 <div>
                   <h3 className='font-semibold'>{selectedUser.full_name}</h3>
-                  <p className='text-sm text-gray-600'>{selectedUser.role}</p>
+                  <p className='text-sm text-gray-600'>
+                    {selectedUser.role &&
+                      t(`reviews.userRoles.${selectedUser.role}`)}
+                  </p>
                 </div>
               </div>
             )}
@@ -453,7 +430,9 @@ export default function ReviewsPage() {
             )}
 
             <div className='mb-4'>
-              <label className='block text-sm font-medium mb-2'>Оценка</label>
+              <label className='block text-sm font-medium mb-2'>
+                {t('reviews.rating')}
+              </label>
               <div className='flex justify-center mb-2'>
                 {renderStars(ratingScore, setRatingScore)}
               </div>
@@ -461,31 +440,32 @@ export default function ReviewsPage() {
 
             <div className='mb-4'>
               <label className='block text-sm font-medium mb-2'>
-                Комментарий
+                {t('reviews.comment')}
               </label>
               <Textarea
-                placeholder='Напишите ваш отзыв о сотрудничестве...'
+                placeholder={t('reviews.writeReview')}
                 value={ratingComment}
                 onChange={(e) => setRatingComment(e.target.value)}
                 rows={4}
               />
             </div>
           </div>
+
           <DialogFooter>
             <Button
               variant='outline'
               onClick={() => setShowRatingDialog(false)}
             >
-              Отмена
+              {t('reviews.cancel')}
             </Button>
             <Button onClick={handleSubmitRating} disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-                  Отправка...
+                  {t('reviews.sending')}
                 </>
               ) : (
-                'Отправить отзыв'
+                t('reviews.sendReview')
               )}
             </Button>
           </DialogFooter>

@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useUser } from '@/contexts/UserContext';
+import { useTranslation } from '@/contexts/i18n';
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -25,6 +25,8 @@ export default function FavoritesPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const { userState } = useUser();
+  const { t } = useTranslation();
+
   const toggleExpand = (id: string) => {
     setExpandedItems((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -59,7 +61,6 @@ export default function FavoritesPage() {
 
   const groupedFavorites = favorites.reduce(
     (acc: Record<string, any[]>, item) => {
-      //   const groupedFavorites = favorites.reduce((acc, item) => {
       if (!acc[item.type]) {
         acc[item.type] = [];
       }
@@ -75,18 +76,20 @@ export default function FavoritesPage() {
         <Button variant='ghost' onClick={() => router.back()} className='mr-2'>
           <ArrowLeft className='h-6 w-6' />
         </Button>
-        <h1 className='text-2xl font-bold'>Избранное</h1>
+        <h1 className='text-2xl font-bold'>{t('favorites.title')}</h1>
       </div>
 
       <div className='flex justify-between items-center mb-4'>
         <div className='flex items-center'>
           <Heart className='h-5 w-5 mr-2 text-red-500' />
-          <span className='font-semibold'>Всего: {favorites.length}</span>
+          <span className='font-semibold'>
+            {t('favorites.total')}: {favorites.length}
+          </span>
         </div>
         {favorites.length > 0 && (
           <Button variant='outline' size='sm' onClick={clearAllFavorites}>
             <Trash2 className='h-4 w-4 mr-2' />
-            Очистить все
+            {t('favorites.clearAll')}
           </Button>
         )}
       </div>
@@ -99,7 +102,7 @@ export default function FavoritesPage() {
             exit={{ opacity: 0, y: -20 }}
             className='text-center py-8 text-gray-500'
           >
-            У вас пока нет избранных элементов
+            {t('favorites.noFavorites')}
           </motion.div>
         ) : (
           Object.entries(groupedFavorites).map(([type, items]) => (
@@ -113,11 +116,7 @@ export default function FavoritesPage() {
             >
               <h2 className='text-lg font-semibold mb-3 flex items-center'>
                 {getFavoriteIcon(type)}
-                <span className='ml-2'>
-                  {type === 'cargo' && 'Грузы'}
-                  {type === 'route' && 'Маршруты'}
-                  {type === 'carrier' && 'Перевозчики'}
-                </span>
+                <span className='ml-2'>{t(`favorites.types.${type}`)}</span>
                 <Badge variant='secondary' className='ml-2'>
                   {items.length}
                 </Badge>
@@ -175,6 +174,7 @@ export default function FavoritesPage() {
                             </AnimatePresence>
                           </div>
                         </div>
+
                         <Button
                           variant='ghost'
                           size='sm'
@@ -184,12 +184,12 @@ export default function FavoritesPage() {
                           {expandedItems.includes(item.id) ? (
                             <>
                               <ChevronUp className='h-4 w-4 mr-2' />
-                              Скрыть детали
+                              {t('favorites.hideDetails')}
                             </>
                           ) : (
                             <>
                               <ChevronDown className='h-4 w-4 mr-2' />
-                              Показать детали
+                              {t('favorites.showDetails')}
                             </>
                           )}
                         </Button>
@@ -206,26 +206,26 @@ export default function FavoritesPage() {
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Подтверждение удаления</DialogTitle>
+            <DialogTitle>{t('favorites.deleteConfirmation')}</DialogTitle>
           </DialogHeader>
-          <p>Вы уверены, что хотите удалить этот элемент из избранного?</p>
+          <p>{t('favorites.deleteConfirmMessage')}</p>
           <div className='flex justify-end space-x-2 mt-4'>
             <Button
               variant='outline'
               onClick={() => setShowDeleteConfirm(false)}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button variant='destructive' onClick={confirmDelete}>
-              Удалить
+              {t('common.delete')}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
       <NavigationMenu
         userRole={userState.role === 'carrier' ? 'carrier' : 'other'}
       />
-      {/* <NavigationMenu userRole='carrier' /> */}
     </div>
   );
 }

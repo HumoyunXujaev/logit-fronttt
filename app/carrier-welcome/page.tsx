@@ -26,7 +26,8 @@ export default function CarrierWelcomePage() {
           href='/carrier-animation'
           className='w-full bg-blue-500 hover:bg-blue-600 text-white text-center py-3 rounded-lg text-lg font-semibold transition duration-300 flex items-center justify-center'
         >
-          {t('home.start')} <ArrowRight className='ml-2' size={24} />
+          {t('home.start')}
+          <ArrowRight className='ml-2' size={24} />
         </Link>
       </footer>
     </div>

@@ -42,6 +42,7 @@ import { ApiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { useUser } from '@/contexts/UserContext';
 import AssignedCargosSection from '../components/AssignedCargo';
+import { useTranslation } from '@/contexts/i18n';
 
 interface VehicleResponse {
   results: Vehicle[];
@@ -218,10 +219,8 @@ const documentTypes = [
 //   { value: 'tir', label: 'TIR' },
 // ];
 
-export default function MyVehiclesPage() {
+const MyVehiclesPage = () => {
   const [vehicles, setVehicles] = useState<VehicleResponse>({ results: [] });
-
-  // const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [carrierRequests, setCarrierRequests] =
     useState<CarrierRequestResponse>({ results: [] });
   const [isLoading, setIsLoading] = useState(true);
@@ -230,17 +229,12 @@ export default function MyVehiclesPage() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [expandedVehicle, setExpandedVehicle] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [vehicleForm, setVehicleForm] = useState(initialVehicleForm);
   const [requestForm, setRequestForm] = useState(initialCarrierRequestForm);
   const [documents, setDocuments] = useState<DocumentFormData[]>([]);
-
-  // const [documents, setDocuments] = useState<{ type: string; file: File }[]>(
-  //   []
-  // );
-
   const { userState } = useUser();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchVehicles();
@@ -252,9 +246,8 @@ export default function MyVehiclesPage() {
       setIsLoading(true);
       const response = await api.getVehicles();
       setVehicles(response);
-      console.log(response, 'res');
     } catch (error) {
-      toast.error('Ошибка при загрузке транспорта');
+      toast.error(t('vehicle.fetchVehiclesError'));
       console.error('Fetch vehicles error:', error);
     } finally {
       setIsLoading(false);
@@ -265,9 +258,8 @@ export default function MyVehiclesPage() {
     try {
       const response = await api.get('/cargo/carrier-requests/');
       setCarrierRequests(response);
-      console.log(response, 'res');
     } catch (error) {
-      toast.error('Ошибка при загрузке заявок');
+      toast.error(t('vehicle.fetchRequestsError'));
       console.error('Fetch carrier requests error:', error);
     }
   };
@@ -275,9 +267,8 @@ export default function MyVehiclesPage() {
   const handleVehicleSubmit = async () => {
     try {
       setIsSubmitting(true);
-
       if (selectedVehicle) {
-        // Check required documents
+        // Проверка обязательных документов
         const requiredDocs = documentTypes.filter((dt) => dt.required);
         const missingDocs = requiredDocs.filter(
           (dt) => !documents.some((d) => d.type === dt.value)
@@ -285,85 +276,38 @@ export default function MyVehiclesPage() {
 
         if (missingDocs.length > 0) {
           toast.error(
-            `Необходимо загрузить следующие документы: ${missingDocs
-              .map((d) => d.label)
+            `${t('vehicle.requiredDocuments')}: ${missingDocs
+              .map((d) => t(`vehicle.documentTypes.${d.value}`))
               .join(', ')}`
           );
           return;
         }
+
         const vehicleResponse = await api.updateVehicle(
           vehicleForm.id,
           vehicleForm
         );
-        console.log(vehicleResponse, 'vehres');
         const vehicleId = vehicleResponse?.id;
-        console.log(vehicleResponse, 'vehres');
-        console.log(vehicleId, 'id');
 
-        // Upload documents
+        // Загрузка документов
         const documentsUploaded = await handleDocumentUpload(
           vehicleForm.id,
           documents
         );
-
         if (!documentsUploaded) {
-          throw new Error('Failed to upload documents');
+          throw new Error(t('vehicle.documentsUploadFailed'));
         }
-
-        // Upload documents
-        // for (const doc of documents) {
-        //   const formData = new FormData();
-        //   formData.append('file', doc.file);
-        //   formData.append('type', doc.type);
-        //   formData.append('vehicle', vehicleId);
-        //   const documents = await api.post(
-        //     `/vehicles/${vehicleForm.id}/documents/`,
-        //     formData
-        //   );
-        //   console.log(documents, 'documents');
-        // }
       } else {
         const vehicleResponse = await api.createVehicle(vehicleForm);
-        // Create vehicle
-        console.log(vehicleResponse, 'vehres');
-        // const vehicleId = vehicleResponse?.id;
-        // console.log(vehicleResponse, 'vehres');
-        // console.log(vehicleId, 'id');
-
-        // Upload documents
-        // const documentsUploaded = await handleDocumentUpload(
-        //   vehicleId,
-        //   documents
-        // );
-
-        // if (!documentsUploaded) {
-        //   throw new Error('Failed to upload documents');
-        // }
-
-        // // Upload documents
-        // for (const doc of documents) {
-        //   const formData = new FormData();
-        //   formData.append('file', doc.file);
-        //   formData.append('type', doc.type);
-        //   formData.append('vehicle', vehicleId);
-        //   const documents = await api.post(
-        //     `/vehicles/${vehicleId}/documents/`,
-        //     formData
-        //   );
-        //   console.log(documents, 'documents');
-        // }
-
-        // .then((res) => console.log(res))
-        // .catch((err) => console.log(err, 'document errror'));
       }
 
-      toast.success('Транспорт успешно добавлен');
+      toast.success(t('vehicle.vehicleAddedSuccess'));
       setIsAddingVehicle(false);
       setVehicleForm(initialVehicleForm);
       setDocuments([]);
       fetchVehicles();
     } catch (error) {
-      toast.error('Ошибка при добавлении транспорта');
+      toast.error(t('vehicle.vehicleAddError'));
       console.error('Add vehicle error:', error);
     } finally {
       setIsSubmitting(false);
@@ -374,19 +318,18 @@ export default function MyVehiclesPage() {
     try {
       setIsSubmitting(true);
       await api.post('/cargo/carrier-requests/', requestForm);
-      toast.success('Заявка успешно создана');
+      toast.success(t('vehicle.requestCreatedSuccess'));
       setIsAddingRequest(false);
       setRequestForm(initialCarrierRequestForm);
       fetchCarrierRequests();
     } catch (error) {
-      toast.error('Ошибка при создании заявки');
+      toast.error(t('vehicle.requestCreateError'));
       console.error('Add request error:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Update document upload handler
   const handleDocumentUpload = async (
     vehicleId: string,
     documents: DocumentFormData[]
@@ -407,14 +350,10 @@ export default function MyVehiclesPage() {
     }
   };
 
-  // const handleDocumentUpload = (file: File, type: string) => {
-  //   setDocuments((prev) => [...prev, { file, type }]);
-  // };
-
   const handleVehicleInputChange = (name: string, value: any) => {
     setVehicleForm((prev) => {
       const updated = { ...prev, [name]: value };
-      // Calculate volume if dimensions are provided
+      // Рассчитываем объем, если заданы размеры
       if (['length', 'width', 'height'].includes(name)) {
         if (updated.length && updated.width && updated.height) {
           updated.volume = updated.length * updated.width * updated.height;
@@ -434,19 +373,20 @@ export default function MyVehiclesPage() {
   const renderVehicleForm = () => (
     <div className='space-y-4'>
       <div>
-        <label className='block text-sm font-medium mb-2'>Гос. номер*</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('vehicle.registrationNumber')}*
+        </label>
         <Input
           value={vehicleForm.registration_number}
           onChange={(e) =>
             handleVehicleInputChange('registration_number', e.target.value)
           }
-          placeholder='Введите гос. номер'
+          placeholder={t('vehicle.enterPlateNumber')}
         />
       </div>
-
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Страна регистрации*
+          {t('vehicle.registrationCountry')}*
         </label>
         <Select
           value={vehicleForm.registration_country}
@@ -455,20 +395,21 @@ export default function MyVehiclesPage() {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder='Выберите страну' />
+            <SelectValue placeholder={t('vehicle.selectCountry')} />
           </SelectTrigger>
           <SelectContent>
             {countries.map((country) => (
               <SelectItem key={country.value} value={country.value}>
-                {country.label}
+                {t(`vehicle.countriesList.${country.value}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-
       <div>
-        <label className='block text-sm font-medium mb-2'>Тип кузова*</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('vehicle.bodyType')}*
+        </label>
         <Select
           value={vehicleForm.body_type}
           onValueChange={(value) =>
@@ -476,20 +417,21 @@ export default function MyVehiclesPage() {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder='Выберите тип кузова' />
+            <SelectValue placeholder={t('vehicle.selectBodyType')} />
           </SelectTrigger>
           <SelectContent>
             {bodyTypes.map((type) => (
               <SelectItem key={type.value} value={type.value}>
-                {type.label}
+                {t(`cargo.${type.value}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-
       <div>
-        <label className='block text-sm font-medium mb-2'>Тип погрузки*</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('vehicle.loadingType')}*
+        </label>
         <Select
           value={vehicleForm.loading_type}
           onValueChange={(value) =>
@@ -497,22 +439,21 @@ export default function MyVehiclesPage() {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder='Выберите тип погрузки' />
+            <SelectValue placeholder={t('vehicle.selectLoadingType')} />
           </SelectTrigger>
           <SelectContent>
             {loadingTypes.map((type) => (
               <SelectItem key={type.value} value={type.value}>
-                {type.label}
+                {t(`cargo.${type.value}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-
       <div className='grid grid-cols-2 gap-4'>
         <div>
           <label className='block text-sm font-medium mb-2'>
-            Грузоподъемность (тонн)*
+            {t('vehicle.capacity')}*
           </label>
           <Input
             type='number'
@@ -523,7 +464,9 @@ export default function MyVehiclesPage() {
           />
         </div>
         <div>
-          <label className='block text-sm font-medium mb-2'>Объем (м³)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.volume')}
+          </label>
           <Input
             type='number'
             value={vehicleForm.volume || ''}
@@ -533,10 +476,11 @@ export default function MyVehiclesPage() {
           />
         </div>
       </div>
-
       <div className='grid grid-cols-3 gap-4'>
         <div>
-          <label className='block text-sm font-medium mb-2'>Длина (м)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.length')}
+          </label>
           <Input
             type='number'
             value={vehicleForm.length || ''}
@@ -546,7 +490,9 @@ export default function MyVehiclesPage() {
           />
         </div>
         <div>
-          <label className='block text-sm font-medium mb-2'>Ширина (м)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.width')}
+          </label>
           <Input
             type='number'
             value={vehicleForm.width || ''}
@@ -556,7 +502,9 @@ export default function MyVehiclesPage() {
           />
         </div>
         <div>
-          <label className='block text-sm font-medium mb-2'>Высота (м)</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('cargo.height')}
+          </label>
           <Input
             type='number'
             value={vehicleForm.height || ''}
@@ -566,7 +514,6 @@ export default function MyVehiclesPage() {
           />
         </div>
       </div>
-
       <div className='grid grid-cols-3 gap-4'>
         <div className='flex items-center'>
           <Checkbox
@@ -577,7 +524,7 @@ export default function MyVehiclesPage() {
             }
           />
           <label htmlFor='adr' className='ml-2'>
-            ADR
+            {t('vehicle.adr')}
           </label>
         </div>
         <div className='flex items-center'>
@@ -589,7 +536,7 @@ export default function MyVehiclesPage() {
             }
           />
           <label htmlFor='dozvol' className='ml-2'>
-            DOZVOL
+            {t('vehicle.dozvol')}
           </label>
         </div>
         <div className='flex items-center'>
@@ -601,14 +548,15 @@ export default function MyVehiclesPage() {
             }
           />
           <label htmlFor='tir' className='ml-2'>
-            TIR
+            {t('vehicle.tir')}
           </label>
         </div>
       </div>
-
       {selectedVehicle ? (
         <div>
-          <label className='block text-sm font-medium mb-2'>Документы</label>
+          <label className='block text-sm font-medium mb-2'>
+            {t('vehicle.documents')}
+          </label>
           {documentTypes.map((docType) => (
             <div
               key={docType.value}
@@ -616,7 +564,7 @@ export default function MyVehiclesPage() {
             >
               <div className='flex items-center justify-between'>
                 <span className='font-medium'>
-                  {docType.label}
+                  {t(`vehicle.documentTypes.${docType.value}`)}
                   {docType.required && (
                     <span className='text-red-500 ml-1'>*</span>
                   )}
@@ -624,7 +572,7 @@ export default function MyVehiclesPage() {
               </div>
               <Input
                 type='text'
-                placeholder='Название документа'
+                placeholder={t('vehicle.documentTitle')}
                 className='mb-2'
                 onChange={(e) => {
                   const existingDoc = documents.find(
@@ -644,7 +592,7 @@ export default function MyVehiclesPage() {
               <div className='grid grid-cols-2 gap-4'>
                 <Input
                   type='date'
-                  placeholder='Срок действия'
+                  placeholder={t('vehicle.expiryDate')}
                   onChange={(e) => {
                     const existingDoc = documents.find(
                       (d) => d.type === docType.value
@@ -668,9 +616,10 @@ export default function MyVehiclesPage() {
                     const newDoc: DocumentFormData = {
                       file,
                       type: docType.value,
-                      title: `${docType.label} - ${file.name}`,
+                      title: `${t(
+                        `vehicle.documentTypes.${docType.value}`
+                      )} - ${file.name}`,
                     };
-
                     if (existingDocIndex !== -1) {
                       setDocuments((docs) =>
                         docs.map((d, i) =>
@@ -681,18 +630,15 @@ export default function MyVehiclesPage() {
                       setDocuments((docs) => [...docs, newDoc]);
                     }
                   }}
-                  // allowedTypes={['image/jpeg', 'image/png', 'application/pdf']}
                   maxSize={5 * 1024 * 1024}
-                  label={`Загрузить ${docType.label}`}
+                  label={t('vehicle.uploadDocument')}
                 />
               </div>
             </div>
           ))}
         </div>
       ) : (
-        // </div>
-
-        <p>u will add the documents later</p>
+        <p>{t('vehicle.documentsLater')}</p>
       )}
     </div>
   );
@@ -732,12 +678,11 @@ export default function MyVehiclesPage() {
       };
     }, []);
 
-    // Search locations when query changes
+    // Search locations when typing
     useEffect(() => {
       if (searchQuery.length >= 2) {
         setIsLoading(true);
         setOpen(true);
-
         const timer = setTimeout(() => {
           api
             .searchLocations(searchQuery)
@@ -751,7 +696,6 @@ export default function MyVehiclesPage() {
               setIsLoading(false);
             });
         }, 300);
-
         return () => clearTimeout(timer);
       } else {
         setLocations([]);
@@ -761,7 +705,7 @@ export default function MyVehiclesPage() {
       }
     }, [searchQuery]);
 
-    const handleSelect = (location: Location) => {
+    const handleSelect = (location: any) => {
       onChange({
         id: location.id.toString(),
         name: location.full_name || location.name,
@@ -779,26 +723,24 @@ export default function MyVehiclesPage() {
           onFocus={() => searchQuery.length >= 2 && setOpen(true)}
           className={cn(error && 'border-red-500')}
         />
-
         {/* Show selected value when search is empty */}
         {value.name && searchQuery === '' && (
           <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
             {value.name}
           </div>
         )}
-
         {open && (
           <div className='absolute z-10 w-full mt-1 bg-white rounded-md border shadow-md'>
             <div className='p-1'>
               {isLoading ? (
                 <div className='p-4 text-center text-sm text-muted-foreground'>
-                  Загрузка...
+                  {t('common.loading')}
                 </div>
               ) : locations.length === 0 ? (
                 <div className='p-4 text-center text-sm text-muted-foreground'>
                   {searchQuery.length < 2
-                    ? 'Введите минимум 2 символа для поиска'
-                    : 'Ничего не найдено'}
+                    ? t('cargo.enterMinimum2Chars')
+                    : t('cargo.nothingFound')}
                 </div>
               ) : (
                 <ScrollArea className='h-[300px]'>
@@ -843,7 +785,6 @@ export default function MyVehiclesPage() {
             </div>
           </div>
         )}
-
         {error && errorMessage && (
           <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
         )}
@@ -851,139 +792,11 @@ export default function MyVehiclesPage() {
     );
   };
 
-  // const renderCarrierRequestForm = () => (
-  //   <div className='space-y-4'>
-  //     <div>
-  //       <label className='block text-sm font-medium mb-2'>
-  //         Пункт погрузки*
-  //       </label>
-  //       <Input
-  //         placeholder='Откуда'
-  //         value={requestForm.loading_point}
-  //         onChange={(e) =>
-  //           handleRequestInputChange('loading_point', e.target.value)
-  //         }
-  //       />
-  //     </div>
-
-  //     <div>
-  //       <label className='block text-sm font-medium mb-2'>
-  //         Пункт выгрузки*
-  //       </label>
-  //       <Input
-  //         placeholder='Куда'
-  //         value={requestForm.unloading_point}
-  //         onChange={(e) =>
-  //           handleRequestInputChange('unloading_point', e.target.value)
-  //         }
-  //       />
-  //     </div>
-
-  //     <div>
-  //       <label className='block text-sm font-medium mb-2'>
-  //         Дата готовности*
-  //       </label>
-  //       <Input
-  //         type='date'
-  //         value={requestForm.ready_date}
-  //         onChange={(e) =>
-  //           handleRequestInputChange('ready_date', e.target.value)
-  //         }
-  //         min={new Date().toISOString().split('T')[0]}
-  //       />
-  //     </div>
-
-  //     <div>
-  //       <label className='block text-sm font-medium mb-2'>Транспорт*</label>
-  //       <Select
-  //         value={requestForm.vehicle}
-  //         onValueChange={(value) => handleRequestInputChange('vehicle', value)}
-  //       >
-  //         <SelectTrigger>
-  //           <SelectValue placeholder='Выберите транспорт' />
-  //         </SelectTrigger>
-  //         <SelectContent>
-  //           {vehicles?.results?.map((vehicle: any) => (
-  //             <SelectItem key={vehicle.id} value={vehicle.id}>
-  //               {vehicle.registration_number} -{' '}
-  //               {bodyTypes.find((t) => t.value === vehicle.body_type)?.label}
-  //             </SelectItem>
-  //           ))}
-  //         </SelectContent>
-  //       </Select>
-  //     </div>
-
-  //     <div className='grid grid-cols-2 gap-4'>
-  //       <div>
-  //         <label className='block text-sm font-medium mb-2'>
-  //           Количество машин
-  //         </label>
-  //         <Input
-  //           type='number'
-  //           min={1}
-  //           value={requestForm.vehicle_count}
-  //           onChange={(e) =>
-  //             handleRequestInputChange(
-  //               'vehicle_count',
-  //               parseInt(e.target.value)
-  //             )
-  //           }
-  //         />
-  //       </div>
-  //       <div>
-  //         <label className='block text-sm font-medium mb-2'>
-  //           Ожидаемая цена
-  //         </label>
-  //         <Input
-  //           type='number'
-  //           placeholder='Цена'
-  //           value={requestForm.price_expectation || ''}
-  //           onChange={(e) =>
-  //             handleRequestInputChange(
-  //               'price_expectation',
-  //               parseFloat(e.target.value)
-  //             )
-  //           }
-  //         />
-  //       </div>
-  //     </div>
-
-  //     <div>
-  //       <label className='block text-sm font-medium mb-2'>Условия оплаты</label>
-  //       <Select
-  //         value={requestForm.payment_terms || ''}
-  //         onValueChange={(value) =>
-  //           handleRequestInputChange('payment_terms', value)
-  //         }
-  //       >
-  //         <SelectTrigger>
-  //           <SelectValue placeholder='Выберите условия оплаты' />
-  //         </SelectTrigger>
-  //         <SelectContent>
-  //           <SelectItem value='on_loading'>При погрузке</SelectItem>
-  //           <SelectItem value='on_unloading'>При выгрузке</SelectItem>
-  //           <SelectItem value='after_unloading'>После выгрузки</SelectItem>
-  //           <SelectItem value='delayed'>Отсрочка платежа</SelectItem>
-  //         </SelectContent>
-  //       </Select>
-  //     </div>
-
-  //     <div>
-  //       <label className='block text-sm font-medium mb-2'>Примечания</label>
-  //       <Input
-  //         placeholder='Дополнительная информация'
-  //         value={requestForm.notes}
-  //         onChange={(e) => handleRequestInputChange('notes', e.target.value)}
-  //       />
-  //     </div>
-  //   </div>
-  // );
-
   const renderCarrierRequestForm = () => (
     <div className='space-y-4'>
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Пункт погрузки*
+          {t('cargo.loadingPoint')}*
         </label>
         <LocationSelector
           value={{
@@ -994,14 +807,14 @@ export default function MyVehiclesPage() {
             handleRequestInputChange('loading_location', id);
             handleRequestInputChange('loading_point', name);
           }}
-          placeholder='Введите пункт погрузки'
+          placeholder={t('cargo.enterCity')}
           error={!requestForm.loading_point}
-          errorMessage='Пункт погрузки обязателен'
+          errorMessage={t('cargo.requiredField')}
         />
       </div>
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Пункт выгрузки*
+          {t('cargo.unloadingPoint')}*
         </label>
         <LocationSelector
           value={{
@@ -1012,14 +825,14 @@ export default function MyVehiclesPage() {
             handleRequestInputChange('unloading_location', id);
             handleRequestInputChange('unloading_point', name);
           }}
-          placeholder='Введите пункт выгрузки'
+          placeholder={t('cargo.enterCity')}
           error={!requestForm.unloading_point}
-          errorMessage='Пункт выгрузки обязателен'
+          errorMessage={t('cargo.requiredField')}
         />
       </div>
       <div>
         <label className='block text-sm font-medium mb-2'>
-          Дата готовности*
+          {t('vehicle.readyDate')}*
         </label>
         <Input
           type='date'
@@ -1031,19 +844,21 @@ export default function MyVehiclesPage() {
         />
       </div>
       <div>
-        <label className='block text-sm font-medium mb-2'>Транспорт*</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('vehicle.vehicle')}*
+        </label>
         <Select
           value={requestForm.vehicle}
           onValueChange={(value) => handleRequestInputChange('vehicle', value)}
         >
           <SelectTrigger>
-            <SelectValue placeholder='Выберите транспорт' />
+            <SelectValue placeholder={t('vehicle.selectVehicle')} />
           </SelectTrigger>
           <SelectContent>
             {vehicles?.results?.map((vehicle: any) => (
               <SelectItem key={vehicle.id} value={vehicle.id}>
                 {vehicle.registration_number} -{' '}
-                {bodyTypes.find((t) => t.value === vehicle.body_type)?.label}
+                {t(`cargo.${vehicle.body_type}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -1052,7 +867,7 @@ export default function MyVehiclesPage() {
       <div className='grid grid-cols-2 gap-4'>
         <div>
           <label className='block text-sm font-medium mb-2'>
-            Количество машин
+            {t('vehicle.vehicleCount')}
           </label>
           <Input
             type='number'
@@ -1068,11 +883,11 @@ export default function MyVehiclesPage() {
         </div>
         <div>
           <label className='block text-sm font-medium mb-2'>
-            Ожидаемая цена
+            {t('vehicle.expectedPrice')}
           </label>
           <Input
             type='number'
-            placeholder='Цена'
+            placeholder={t('cargo.enterAmount')}
             value={requestForm.price_expectation || ''}
             onChange={(e) =>
               handleRequestInputChange(
@@ -1084,7 +899,9 @@ export default function MyVehiclesPage() {
         </div>
       </div>
       <div>
-        <label className='block text-sm font-medium mb-2'>Условия оплаты</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('cargo.paymentTerms')}
+        </label>
         <Select
           value={requestForm.payment_terms || ''}
           onValueChange={(value) =>
@@ -1092,20 +909,26 @@ export default function MyVehiclesPage() {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder='Выберите условия оплаты' />
+            <SelectValue placeholder={t('cargo.selectPaymentTerms')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='on_loading'>При погрузке</SelectItem>
-            <SelectItem value='on_unloading'>При выгрузке</SelectItem>
-            <SelectItem value='after_unloading'>После выгрузки</SelectItem>
-            <SelectItem value='delayed'>Отсрочка платежа</SelectItem>
+            <SelectItem value='on_loading'>{t('cargo.on_loading')}</SelectItem>
+            <SelectItem value='on_unloading'>
+              {t('cargo.on_unloading')}
+            </SelectItem>
+            <SelectItem value='after_unloading'>
+              {t('cargo.after_unloading')}
+            </SelectItem>
+            <SelectItem value='delayed'>{t('cargo.delayed')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div>
-        <label className='block text-sm font-medium mb-2'>Примечания</label>
+        <label className='block text-sm font-medium mb-2'>
+          {t('vehicle.notes')}
+        </label>
         <Input
-          placeholder='Дополнительная информация'
+          placeholder={t('vehicle.additionalInfo')}
           value={requestForm.notes}
           onChange={(e) => handleRequestInputChange('notes', e.target.value)}
         />
@@ -1115,8 +938,6 @@ export default function MyVehiclesPage() {
 
   const renderVehicleCard = (vehicle: Vehicle) => {
     const isExpanded = expandedVehicle === vehicle.id;
-
-    // console.log(vehicle, 'vehicelrender');
     return (
       <Card key={vehicle.id} className='mb-4'>
         <CardContent className='p-4'>
@@ -1126,68 +947,60 @@ export default function MyVehiclesPage() {
                 {vehicle.registration_number}
               </h3>
               <p className='text-sm text-gray-600'>
-                {bodyTypes.find((t) => t.value === vehicle.body_type)?.label}
+                {t(`cargo.${vehicle.body_type}`)}
               </p>
             </div>
             <div className='flex space-x-2'>
-              {vehicle.adr && <Badge>ADR</Badge>}
-              {vehicle.dozvol && <Badge>DOZVOL</Badge>}
-              {vehicle.tir && <Badge>TIR</Badge>}
+              {vehicle.adr && <Badge>{t('vehicle.adr')}</Badge>}
+              {vehicle.dozvol && <Badge>{t('vehicle.dozvol')}</Badge>}
+              {vehicle.tir && <Badge>{t('vehicle.tir')}</Badge>}
               <Badge variant={vehicle.is_verified ? 'default' : 'secondary'}>
-                {/* <Badge variant={vehicle.is_verified ? 'success' : 'secondary'}> */}
-                {vehicle.is_verified ? 'Проверен' : 'На проверке'}
+                {vehicle.is_verified
+                  ? t('vehicle.verificationStatus.verified')
+                  : t('vehicle.verificationStatus.pending')}
               </Badge>
             </div>
           </div>
-
           <div className='space-y-2 text-sm'>
             <p>
-              {vehicle.capacity} т / {vehicle.volume} м³
+              {vehicle.capacity} {t('common.ton')} / {vehicle.volume} m³
             </p>
             <p>
-              Габариты: {vehicle.length}x{vehicle.width}x{vehicle.height} м
+              {t('vehicle.dimensions')}: {vehicle.length}x{vehicle.width}x
+              {vehicle.height} m
             </p>
           </div>
-
           {isExpanded && (
             <div className='mt-4 space-y-4'>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                 {vehicle?.documents?.map((doc) => (
                   <div key={doc.id} className='flex items-center space-x-2'>
                     <FileIcon className='h-4 w-4' />
-                    <span>
-                      {documentTypes.find((t) => t.value === doc.type)?.label}
-                    </span>
+                    <span>{t(`vehicle.documentTypes.${doc.type}`)}</span>
                     <Badge variant={doc.verified ? 'default' : 'secondary'}>
-                      {doc.verified ? 'Проверен' : 'На проверке'}
+                      {doc.verified
+                        ? t('vehicle.verificationStatus.verified')
+                        : t('vehicle.verificationStatus.pending')}
                     </Badge>
                   </div>
                 ))}
               </div>
-
               <div className='space-y-2'>
                 <p>
-                  Тип погрузки:{' '}
-                  {
-                    loadingTypes.find((t) => t.value === vehicle.loading_type)
-                      ?.label
-                  }
+                  {t('cargo.loadingType')}: {t(`cargo.${vehicle.loading_type}`)}
                 </p>
                 <p>
-                  Страна регистрации:{' '}
-                  {
-                    countries.find(
-                      (c) => c.value === vehicle.registration_country
-                    )?.label
-                  }
+                  {t('vehicle.registrationCountry')}:{' '}
+                  {t(`vehicle.countriesList.${vehicle.registration_country}`)}
                 </p>
                 {vehicle.license_number && (
-                  <p>Номер лицензии: {vehicle.license_number}</p>
+                  <p>
+                    {t('vehicle.licenseNumber')}: {vehicle.license_number}
+                  </p>
                 )}
               </div>
             </div>
           )}
-
           <div className='flex justify-between mt-4'>
             <Button
               variant='ghost'
@@ -1199,7 +1012,7 @@ export default function MyVehiclesPage() {
               ) : (
                 <ChevronDown className='h-4 w-4 mr-1' />
               )}
-              {isExpanded ? 'Скрыть' : 'Подробнее'}
+              {isExpanded ? t('vehicle.hide') : t('vehicle.details')}
             </Button>
             <div className='space-x-2'>
               <Button
@@ -1215,8 +1028,7 @@ export default function MyVehiclesPage() {
                   setIsAddingVehicle(true);
                 }}
               >
-                <Edit2Icon className='h-4 w-4 mr-1' />
-                Изменить
+                <Edit2Icon className='h-4 w-4 mr-1' /> {t('vehicle.edit')}
               </Button>
               <Button
                 variant='outline'
@@ -1225,15 +1037,14 @@ export default function MyVehiclesPage() {
                 onClick={async () => {
                   try {
                     await api.delete(`/vehicles/${vehicle.id}/`);
-                    toast.success('Транспорт удален');
+                    toast.success(t('vehicle.vehicleDeletedSuccess'));
                     fetchVehicles();
                   } catch (error) {
-                    toast.error('Ошибка при удалении транспорта');
+                    toast.error(t('vehicle.vehicleDeleteError'));
                   }
                 }}
               >
-                <Trash2Icon className='h-4 w-4 mr-1' />
-                Удалить
+                <Trash2Icon className='h-4 w-4 mr-1' /> {t('vehicle.remove')}
               </Button>
             </div>
           </div>
@@ -1243,7 +1054,6 @@ export default function MyVehiclesPage() {
   };
 
   const renderCarrierRequestCard = (request: CarrierRequest) => {
-    console.log(request, 'carriererquest');
     return (
       <Card key={request.id} className='mb-4'>
         <CardContent className='p-4'>
@@ -1254,31 +1064,41 @@ export default function MyVehiclesPage() {
               </h3>
               <p className='text-sm text-gray-600'>
                 {request?.vehicle?.registration_number} -{' '}
-                {request.vehicle.body_type}
+                {t(`cargo.${request.vehicle.body_type}`)}
               </p>
             </div>
             <Badge
               variant={request.status === 'pending' ? 'secondary' : 'outline'}
             >
-              {request.status === 'pending' ? 'В ожидании' : 'В работе'}
+              {request.status === 'pending'
+                ? t('cargo.status.pending')
+                : t('cargo.status.active')}
             </Badge>
           </div>
-
           <div className='space-y-2 text-sm'>
             <p>
-              Дата готовности:{' '}
+              {t('vehicle.readyDate')}:{' '}
               {new Date(request.ready_date).toLocaleDateString()}
             </p>
-            <p>Количество машин: {request.vehicle_count}</p>
+            <p>
+              {t('vehicle.vehicleCount')}: {request.vehicle_count}
+            </p>
             {request.price_expectation && (
-              <p>Ожидаемая цена: {request.price_expectation} ₽</p>
+              <p>
+                {t('vehicle.expectedPrice')}: {request.price_expectation} ₽
+              </p>
             )}
             {request.payment_terms && (
-              <p>Условия оплаты: {request.payment_terms}</p>
+              <p>
+                {t('cargo.paymentTerms')}: {t(`cargo.${request.payment_terms}`)}
+              </p>
             )}
-            {request.notes && <p>Примечания: {request.notes}</p>}
+            {request.notes && (
+              <p>
+                {t('vehicle.notes')}: {request.notes}
+              </p>
+            )}
           </div>
-
           <div className='flex justify-end mt-4 space-x-2'>
             <Button
               variant='outline'
@@ -1286,15 +1106,14 @@ export default function MyVehiclesPage() {
               onClick={async () => {
                 try {
                   await api.delete(`/cargo/carrier-requests/${request.id}/`);
-                  toast.success('Заявка удалена');
+                  toast.success(t('vehicle.requestDeletedSuccess'));
                   fetchCarrierRequests();
                 } catch (error) {
-                  toast.error('Ошибка при удалении заявки');
+                  toast.error(t('vehicle.requestDeleteError'));
                 }
               }}
             >
-              <Trash2Icon className='h-4 w-4 mr-1' />
-              Удалить
+              <Trash2Icon className='h-4 w-4 mr-1' /> {t('vehicle.remove')}
             </Button>
           </div>
         </CardContent>
@@ -1313,33 +1132,32 @@ export default function MyVehiclesPage() {
   return (
     <div className='min-h-screen bg-blue-600 p-4 pb-20'>
       <h1 className='text-2xl font-bold text-white text-center mb-6'>
-        Мои машины и заявки
+        {t('vehicle.title')}
       </h1>
-
       <AssignedCargosSection />
-
       {!isAddingVehicle && !isAddingRequest && (
         <div className='flex flex-col items-center justify-center space-y-4 mt-10'>
           <Button
             className='w-64 h-12'
             onClick={() => setIsAddingVehicle(true)}
           >
-            <Plus className='h-5 w-5 mr-2' /> Добавить машину
+            <Plus className='h-5 w-5 mr-2' /> {t('vehicle.addVehicle')}
           </Button>
           <Button
             className='w-64 h-12'
             onClick={() => setIsAddingRequest(true)}
           >
-            <Plus className='h-5 w-5 mr-2' /> Добавить заявку
+            <Plus className='h-5 w-5 mr-2' /> {t('vehicle.addRequest')}
           </Button>
         </div>
       )}
-
       {isAddingVehicle && (
         <Card className='mb-8 shadow-lg'>
           <CardContent className='p-6'>
             <h2 className='text-xl font-semibold mb-4'>
-              {selectedVehicle ? 'Редактировать машину' : 'Добавить машину'}
+              {selectedVehicle
+                ? t('vehicle.editVehicle')
+                : t('vehicle.addVehicle')}
             </h2>
             {renderVehicleForm()}
             <div className='flex justify-end space-x-4 mt-6'>
@@ -1351,27 +1169,28 @@ export default function MyVehiclesPage() {
                   setVehicleForm(initialVehicleForm);
                 }}
               >
-                Отмена
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleVehicleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-                    Сохранение...
+                    {t('common.saving')}
                   </>
                 ) : (
-                  'Сохранить'
+                  t('common.save')
                 )}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
-
       {isAddingRequest && (
         <Card className='mb-8 shadow-lg'>
           <CardContent className='p-6'>
-            <h2 className='text-xl font-semibold mb-4'>Добавить заявку</h2>
+            <h2 className='text-xl font-semibold mb-4'>
+              {t('vehicle.addRequest')}
+            </h2>
             {renderCarrierRequestForm()}
             <div className='flex justify-end space-x-4 mt-6'>
               <Button
@@ -1381,38 +1200,41 @@ export default function MyVehiclesPage() {
                   setRequestForm(initialCarrierRequestForm);
                 }}
               >
-                Отмена
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleRequestSubmit} disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-                    Создание...
+                    {t('common.creating')}
                   </>
                 ) : (
-                  'Создать'
+                  t('vehicle.create')
                 )}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
-
       {vehicles?.results?.length > 0 && (
         <div className='mb-8'>
-          <h2 className='text-xl font-semibold text-white mb-4'>Мои машины</h2>
+          <h2 className='text-xl font-semibold text-white mb-4'>
+            {t('vehicle.myVehicles')}
+          </h2>
           {vehicles?.results?.map(renderVehicleCard)}
         </div>
       )}
-
       {carrierRequests?.results?.length > 0 && (
         <div className='mb-20'>
-          <h2 className='text-xl font-semibold text-white mb-4'>Мои заявки</h2>
+          <h2 className='text-xl font-semibold text-white mb-4'>
+            {t('vehicle.myRequests')}
+          </h2>
           {carrierRequests?.results?.map(renderCarrierRequestCard)}
         </div>
       )}
-
       <NavigationMenu userRole='carrier' />
     </div>
   );
-}
+};
+
+export default MyVehiclesPage;

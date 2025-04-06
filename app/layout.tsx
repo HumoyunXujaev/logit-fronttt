@@ -11,6 +11,7 @@ import { UserProvider } from '@/contexts/UserContext';
 import UserSwitcher from '@/components/UserSwitcher';
 import { Suspense } from 'react';
 import { ApiInitializer } from '@/components/ApiInitializer';
+import CertificateWarning from '@/components/CertificateWarning';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
                     <ApiInitializer />
                     <ToastProvider />
                     <UserSwitcher />
+                    <CertificateWarning />
                     {children}
                   </LoadingProvider>
                 </Suspense>

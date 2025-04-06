@@ -8,10 +8,12 @@ import {
   isUserSwitcherEnabled,
 } from '@/lib/userswitcherutils';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/contexts/i18n';
 
 export default function DebugPage() {
   const [isEnabled, setIsEnabled] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     setIsEnabled(isUserSwitcherEnabled());
@@ -19,23 +21,25 @@ export default function DebugPage() {
 
   const handleEnable = () => {
     enableUserSwitcher();
+    setIsEnabled(true);
   };
 
   const handleDisable = () => {
     disableUserSwitcher();
+    setIsEnabled(false);
   };
 
   return (
     <div className='min-h-screen bg-gray-100 flex items-center justify-center p-4'>
       <Card className='w-full max-w-md'>
         <CardHeader>
-          <CardTitle className='text-center'>Debug Tools</CardTitle>
+          <CardTitle className='text-center'>{t('debug.debugTools')}</CardTitle>
         </CardHeader>
         <CardContent className='space-y-6'>
           <div className='space-y-2'>
-            <h3 className='text-lg font-medium'>User Switcher</h3>
+            <h3 className='text-lg font-medium'>{t('debug.userSwitcher')}</h3>
             <p className='text-sm text-gray-500'>
-              Current status:{' '}
+              {t('debug.currentStatus')}{' '}
               <span
                 className={
                   isEnabled
@@ -43,7 +47,7 @@ export default function DebugPage() {
                     : 'text-red-500 font-bold'
                 }
               >
-                {isEnabled ? 'ENABLED' : 'DISABLED'}
+                {isEnabled ? t('debug.enabled') : t('debug.disabled')}
               </span>
             </p>
             <div className='flex space-x-2'>
@@ -53,7 +57,7 @@ export default function DebugPage() {
                 className='w-full'
                 disabled={isEnabled}
               >
-                Enable User Switcher
+                {t('debug.enableUserSwitcher')}
               </Button>
               <Button
                 onClick={handleDisable}
@@ -61,26 +65,21 @@ export default function DebugPage() {
                 className='w-full'
                 disabled={!isEnabled}
               >
-                Disable User Switcher
+                {t('debug.disableUserSwitcher')}
               </Button>
             </div>
           </div>
-
           <div className='pt-4 border-t'>
             <Button
               onClick={() => router.push('/home')}
               variant='outline'
               className='w-full'
             >
-              Return to Home
+              {t('debug.returnToHome')}
             </Button>
           </div>
-
           <div className='text-xs text-gray-500 pt-4'>
-            <p>
-              For testing purposes only. The user switcher allows you to test
-              different user roles without creating actual Telegram accounts.
-            </p>
+            <p>{t('debug.testingPurposes')}</p>
           </div>
         </CardContent>
       </Card>

@@ -34,6 +34,12 @@ export class ApiClient {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': '69420',
       },
+      // Add this to avoid SSL certificate validation for self-signed certificates
+      ...(typeof window !== 'undefined' && {
+        httpsAgent: {
+          rejectUnauthorized: false, // This allows self-signed certificates
+        },
+      }),
     });
 
     // Request interceptor for adding auth token

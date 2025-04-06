@@ -16,7 +16,7 @@ export default function CarrierAnimationPage() {
       setTimeout(() => setAnimationStage(1), 4000),
       setTimeout(() => setAnimationStage(2), 8000),
       setTimeout(() => setAnimationStage(3), 10000),
-      setTimeout(() => router.push('/registration-confirm'), 13000), // Перенаправление после показа статистики
+      setTimeout(() => router.push('/registration-confirm'), 13000), // Redirect after showing stats
     ];
     return () => timers.forEach(clearTimeout);
   }, [router]);

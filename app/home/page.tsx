@@ -2001,6 +2001,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 import { api } from '@/lib/api';
+import { useTranslation } from '@/contexts/i18n';
 
 interface Location {
   id: string;
@@ -2581,6 +2582,7 @@ const OrdersPage: React.FC = () => {
 
   const { userState } = useUser();
   const router = useRouter();
+  const { t } = useTranslation();
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -2693,11 +2695,15 @@ const OrdersPage: React.FC = () => {
 
     // Update active filters list for UI
     const newActiveFilters = [];
-    if (filters.loading_location_id) newActiveFilters.push('Откуда');
-    if (filters.unloading_location_id) newActiveFilters.push('Куда');
-    if (filters.vehicle_type) newActiveFilters.push('Тип');
-    if (filters.date_from || filters.date_to) newActiveFilters.push('Даты');
-    if (filters.min_weight || filters.max_weight) newActiveFilters.push('Вес');
+    if (filters.loading_location_id)
+      newActiveFilters.push(t('cargo.loadingPoint'));
+    if (filters.unloading_location_id)
+      newActiveFilters.push(t('cargo.unloadingPoint'));
+    if (filters.vehicle_type) newActiveFilters.push(t('cargo.vehicleType'));
+    if (filters.date_from || filters.date_to)
+      newActiveFilters.push(t('cargo.loadingDate'));
+    if (filters.min_weight || filters.max_weight)
+      newActiveFilters.push(t('cargo.weight'));
 
     setActiveFilters(newActiveFilters);
     setFilterParams(filters);
@@ -2707,7 +2713,7 @@ const OrdersPage: React.FC = () => {
   const clearFilters = () => {
     setFilterParams({});
     setActiveFilters([]);
-    toast.info('Фильтры сброшены');
+    toast.info(t('common.filtersReset'));
   };
 
   // Subscribe to cargo notifications
@@ -2732,11 +2738,11 @@ const OrdersPage: React.FC = () => {
         notifications_enabled: true,
       });
 
-      toast.success('Уведомления включены');
+      toast.success(t('notifications.notificationsEnabled'));
       setShowNotificationDialog(false);
     } catch (error) {
       console.error('Failed to enable notifications:', error);
-      toast.error('Ошибка при включении уведомлений');
+      toast.error(t('notifications.enableNotificationsError'));
     }
   };
 
@@ -2756,7 +2762,7 @@ const OrdersPage: React.FC = () => {
         if (favorite) {
           await api.delete(`/core/favorites/${favorite.id}/`);
           setFavorites((prev) => prev.filter((id) => id !== cargoId));
-          toast.success('Удалено из избранного');
+          toast.success(t('favorites.removedFromFavorites'));
         }
       } else {
         // Add to favorites
@@ -2766,11 +2772,11 @@ const OrdersPage: React.FC = () => {
         });
 
         setFavorites((prev) => [...prev, cargoId]);
-        toast.success('Добавлено в избранное');
+        toast.success(t('favorites.addedToFavorites'));
       }
     } catch (error) {
       console.error('Favorite toggle error:', error);
-      toast.error('Ошибка при изменении избранного');
+      toast.error(t('favorites.favoriteToggleError'));
     }
   };
 
@@ -2809,7 +2815,7 @@ const OrdersPage: React.FC = () => {
       <div className='flex items-center mb-4 bg-white rounded-lg p-2'>
         <Input
           type='text'
-          placeholder='Поиск заказов...'
+          placeholder={t('cargo.searchPlaceholder')}
           value={searchTerm}
           onChange={handleSearch}
           className='mr-2 flex-grow'
@@ -2821,14 +2827,16 @@ const OrdersPage: React.FC = () => {
           onClick={() => setIsFilterModalOpen(true)}
         >
           <Filter className='h-4 w-4 mr-2' />
-          Фильтры
+          {t('common.filter')}
         </Button>
       </div>
 
       {/* Active filters display */}
       {activeFilters.length > 0 && (
         <div className='bg-white rounded-lg p-2 mb-4 flex flex-wrap items-center gap-2'>
-          <span className='text-sm font-medium'>Активные фильтры:</span>
+          <span className='text-sm font-medium'>
+            {t('cargo.activeFilters')}:
+          </span>
           {activeFilters.map((filter) => (
             <Badge
               key={filter}
@@ -2844,7 +2852,7 @@ const OrdersPage: React.FC = () => {
             className='ml-auto h-7 text-red-500 hover:text-red-700 hover:bg-red-50'
             onClick={clearFilters}
           >
-            Сбросить
+            {t('common.clear')}
           </Button>
         </div>
       )}
@@ -2855,7 +2863,6 @@ const OrdersPage: React.FC = () => {
         onApply={handleApplyFilters}
         initialFilters={filterParams}
       />
-
       {isLoading ? (
         <div className='flex items-center justify-center h-64'>
           <Loader2 className='h-8 w-8 animate-spin text-white' />
@@ -2870,15 +2877,18 @@ const OrdersPage: React.FC = () => {
                   variant='secondary'
                   className='bg-blue-100 text-blue-800'
                 >
-                  Поиск в радиусе {filterParams.radius} км
+                  {t('cargo.radiusSearch')} {filterParams.radius}{' '}
+                  {t('cargo.kmFromLoadingPoint')}
                 </Badge>
                 {filterParams.loading_location_id && (
-                  <span className='ml-2'>от точки погрузки</span>
+                  <span className='ml-2'>{t('cargo.kmFromLoadingPoint')}</span>
                 )}
                 {filterParams.loading_location_id &&
-                  filterParams.unloading_location_id && <span> и </span>}
+                  filterParams.unloading_location_id && (
+                    <span> {t('cargo.and')} </span>
+                  )}
                 {filterParams.unloading_location_id && (
-                  <span>от точки выгрузки</span>
+                  <span>{t('cargo.kmFromUnloadingPoint')}</span>
                 )}
               </div>
             )}
@@ -2896,7 +2906,7 @@ const OrdersPage: React.FC = () => {
                             <Badge
                               variant='secondary'
                               className='bg-yellow-100 text-yellow-800'
-                              title='Высокий рейтинг'
+                              title={t('cargo.highRating')}
                             >
                               <Star className='h-4 w-4' />
                             </Badge>
@@ -2905,7 +2915,7 @@ const OrdersPage: React.FC = () => {
                           <Badge
                             variant='secondary'
                             className='bg-green-100 text-green-800'
-                            title='Профиль подтвержден'
+                            title={t('cargo.verifiedProfile')}
                           >
                             <CheckCircle className='h-4 w-4' />
                           </Badge>
@@ -2924,7 +2934,6 @@ const OrdersPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-
                     <div className='flex justify-between items-center mb-2'>
                       <span className='font-bold text-lg'>
                         {cargo.loading_point} - {cargo.unloading_point}
@@ -2933,33 +2942,45 @@ const OrdersPage: React.FC = () => {
                         {formatDate(cargo.created_at)}
                       </span>
                     </div>
-
                     <div className='grid grid-cols-2 gap-2 mb-2 text-sm'>
-                      <span>Груз: {cargo.title}</span>
-                      <span>Вес: {cargo.weight} т</span>
                       <span>
-                        Тип: {getVehicleTypeLabel(cargo.vehicle_type)}
+                        {t('cargo.name')}: {cargo.title}
                       </span>
-                      <span>Оплата: {cargo.payment_method}</span>
+                      <span>
+                        {t('cargo.weight')}: {cargo.weight} {t('common.ton')}
+                      </span>
+                      <span>
+                        {t('cargo.vehicleType')}:{' '}
+                        {getVehicleTypeLabel(cargo.vehicle_type)}
+                      </span>
+                      <span>
+                        {t('cargo.payment')}: {cargo.payment_method}
+                      </span>
                     </div>
-
                     <div className='mb-2'>
                       <span className='font-semibold'>
-                        Цена: {cargo.price ? `${cargo.price} ₽` : 'Договорная'}
+                        {t('cargo.price')}:{' '}
+                        {cargo.price
+                          ? `${cargo.price} ₽`
+                          : t('cargo.negotiablePrice')}
                       </span>
                     </div>
-
                     {expandedOrder === cargo.id && (
                       <div className='mt-4 text-sm'>
-                        <p>Описание: {cargo.description}</p>
-                        {cargo.volume && <p>Объем: {cargo.volume} м³</p>}
                         <p>
-                          Дата загрузки:{' '}
+                          {t('cargo.description')}: {cargo.description}
+                        </p>
+                        {cargo.volume && (
+                          <p>
+                            {t('cargo.volume')}: {cargo.volume} m³
+                          </p>
+                        )}
+                        <p>
+                          {t('cargo.loadingDate')}:{' '}
                           {new Date(cargo.loading_date).toLocaleDateString()}
                         </p>
                       </div>
                     )}
-
                     <div className='flex justify-between mt-4'>
                       <Button
                         variant='outline'
@@ -2972,7 +2993,9 @@ const OrdersPage: React.FC = () => {
                         ) : (
                           <ChevronDown className='h-4 w-4 mr-1' />
                         )}
-                        {expandedOrder === cargo.id ? 'Скрыть' : 'Подробнее'}
+                        {expandedOrder === cargo.id
+                          ? t('cargo.hideDetails')
+                          : t('cargo.showDetails')}
                       </Button>
                       <Button
                         variant='outline'
@@ -3010,14 +3033,14 @@ const OrdersPage: React.FC = () => {
                     {isMoreLoading ? (
                       <Loader2 className='h-4 w-4 mr-2 animate-spin' />
                     ) : null}
-                    Загрузить еще
+                    {t('cargo.loadMore')}
                   </Button>
                 </div>
               )}
             </>
           ) : (
             <div className='bg-white p-6 rounded-lg text-center text-gray-600'>
-              Грузы не найдены. Попробуйте изменить параметры поиска.
+              {t('cargo.noMatchingCargos')}
             </div>
           )}
         </div>
@@ -3029,11 +3052,10 @@ const OrdersPage: React.FC = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Включить уведомления?</DialogTitle>
+            <DialogTitle>{t('notifications.enableNotifications')}</DialogTitle>
           </DialogHeader>
           <p>
-            Вы будете получать уведомления в Telegram о новых грузах по этому
-            направлению:
+            {t('notifications.notificationsOnNewCargos')}
             {currentCargo && (
               <strong>
                 {' '}
@@ -3046,9 +3068,11 @@ const OrdersPage: React.FC = () => {
               variant='outline'
               onClick={() => setShowNotificationDialog(false)}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleEnableNotification}>Включить</Button>
+            <Button onClick={handleEnableNotification}>
+              {t('notifications.enableButton')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
