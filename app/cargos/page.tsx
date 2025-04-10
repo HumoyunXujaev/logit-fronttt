@@ -617,6 +617,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -659,6 +660,8 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import NavigationMenu from '../components/NavigationMenu';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
@@ -1025,25 +1028,176 @@ export default function CargoPage() {
     </div>
   );
 
+  // const LocationSelector = ({
+  //   value,
+  //   onChange,
+  //   placeholder,
+  //   error,
+  //   errorMessage,
+  // }: any) => {
+  //   const [open, setOpen] = useState(false);
+  //   const [searchQuery, setSearchQuery] = useState('');
+  //   const [locations, setLocations] = useState<Location[]>([]);
+  //   const [isLoading, setIsLoading] = useState(false);
+  //   const containerRef = useRef<HTMLInputElement>(null);
+
+  //   // Handle click outside to close dropdown
+  //   useEffect(() => {
+  //     const handleClickOutside = (event: any) => {
+  //       if (
+  //         containerRef.current &&
+  //         !containerRef.current.contains(event.target)
+  //       ) {
+  //         setOpen(false);
+  //       }
+  //     };
+  //     document.addEventListener('mousedown', handleClickOutside);
+  //     return () => {
+  //       document.removeEventListener('mousedown', handleClickOutside);
+  //     };
+  //   }, []);
+
+  //   // Search locations when typing
+  //   useEffect(() => {
+  //     if (searchQuery.length >= 2) {
+  //       setIsLoading(true);
+  //       setOpen(true); // Open list when typing
+  //       const timer = setTimeout(() => {
+  //         api
+  //           .searchLocations(searchQuery)
+  //           .then((data) => {
+  //             setLocations(Array.isArray(data) ? data : []);
+  //             setIsLoading(false);
+  //           })
+  //           .catch((err) => {
+  //             console.error('Search error:', err);
+  //             setLocations([]);
+  //             setIsLoading(false);
+  //           });
+  //       }, 300);
+  //       return () => clearTimeout(timer);
+  //     } else {
+  //       setLocations([]);
+  //       if (searchQuery.length === 0) {
+  //         setOpen(false);
+  //       }
+  //     }
+  //   }, [searchQuery]);
+
+  //   const handleSelect = (location: any) => {
+  //     onChange({
+  //       id: location.id,
+  //       name: location.full_name || location.name,
+  //     });
+  //     setSearchQuery('');
+  //     setOpen(false);
+  //   };
+
+  //   return (
+  //     <div className='relative w-full' ref={containerRef}>
+  //       <Input
+  //         placeholder={placeholder}
+  //         value={searchQuery}
+  //         onChange={(e) => setSearchQuery(e.target.value)}
+  //         onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+  //         className={cn(error && 'border-red-500')}
+  //       />
+  //       {/* Show selected value when search is empty */}
+  //       {value.name && searchQuery === '' && (
+  //         <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
+  //           {value.name}
+  //         </div>
+  //       )}
+  //       {open && (
+  //         <div className='absolute z-10 w-full mt-1 bg-popover rounded-md border shadow-md'>
+  //           <div className='p-1'>
+  //             {isLoading ? (
+  //               <div className='p-4 text-center text-sm text-muted-foreground'>
+  //                 {t('common.loading')}
+  //               </div>
+  //             ) : locations.length === 0 ? (
+  //               <div className='p-4 text-center text-sm text-muted-foreground'>
+  //                 {searchQuery.length < 2
+  //                   ? t('cargo.enterMinimum2Chars')
+  //                   : t('cargo.nothingFound')}
+  //               </div>
+  //             ) : (
+  //               <ScrollArea className='h-[300px]'>
+  //                 {locations.map((location) => (
+  //                   <div
+  //                     key={location.id}
+  //                     onClick={() => handleSelect(location)}
+  //                     className={cn(
+  //                       'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
+  //                       'hover:bg-muted'
+  //                     )}
+  //                   >
+  //                     <div className='flex-1'>
+  //                       <p className='text-sm font-medium'>
+  //                         {location.name}
+  //                         {location.level === 3 && location.parent_name && (
+  //                           <span className='text-muted-foreground'>
+  //                             {' '}
+  //                             - {location.parent_name}
+  //                           </span>
+  //                         )}
+  //                         {location.country_name && location.level !== 1 && (
+  //                           <span className='text-muted-foreground'>
+  //                             {', '}
+  //                             {location.country_name}
+  //                           </span>
+  //                         )}
+  //                       </p>
+  //                       {location.full_name && (
+  //                         <p className='text-xs text-muted-foreground'>
+  //                           {location.full_name}
+  //                         </p>
+  //                       )}
+  //                     </div>
+  //                     {value.id === location.id.toString() && (
+  //                       <Check className='h-4 w-4' />
+  //                     )}
+  //                   </div>
+  //                 ))}
+  //               </ScrollArea>
+  //             )}
+  //           </div>
+  //         </div>
+  //       )}
+  //       {error && errorMessage && (
+  //         <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+  //       )}
+  //     </div>
+  //   );
+  // };
+
+  // Enhanced LocationSelector for cargo form
   const LocationSelector = ({
     value,
     onChange,
     placeholder,
     error,
     errorMessage,
-  }: any) => {
+  }: {
+    value: { id: string; name: string };
+    onChange: (value: { id: string; name: string }) => void;
+    placeholder: string;
+    error?: boolean;
+    errorMessage?: string;
+  }) => {
     const [open, setOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [locations, setLocations] = useState<Location[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const containerRef = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    // Handle click outside to close dropdown
+    // Handle outside click to close dropdown
     useEffect(() => {
-      const handleClickOutside = (event: any) => {
+      const handleClickOutside = (event: MouseEvent) => {
         if (
           containerRef.current &&
-          !containerRef.current.contains(event.target)
+          !containerRef.current.contains(event.target as Node)
         ) {
           setOpen(false);
         }
@@ -1058,7 +1212,8 @@ export default function CargoPage() {
     useEffect(() => {
       if (searchQuery.length >= 2) {
         setIsLoading(true);
-        setOpen(true); // Open list when typing
+        setOpen(true);
+
         const timer = setTimeout(() => {
           api
             .searchLocations(searchQuery)
@@ -1072,6 +1227,7 @@ export default function CargoPage() {
               setIsLoading(false);
             });
         }, 300);
+
         return () => clearTimeout(timer);
       } else {
         setLocations([]);
@@ -1090,79 +1246,141 @@ export default function CargoPage() {
       setOpen(false);
     };
 
+    const clearSelection = () => {
+      onChange({ id: '', name: '' });
+      setSearchQuery('');
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    };
+
     return (
       <div className='relative w-full' ref={containerRef}>
-        <Input
-          placeholder={placeholder}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() => searchQuery.length >= 2 && setOpen(true)}
-          className={cn(error && 'border-red-500')}
-        />
-        {/* Show selected value when search is empty */}
-        {value.name && searchQuery === '' && (
-          <div className='absolute right-0 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
-            {value.name}
-          </div>
-        )}
-        {open && (
-          <div className='absolute z-10 w-full mt-1 bg-popover rounded-md border shadow-md'>
-            <div className='p-1'>
-              {isLoading ? (
-                <div className='p-4 text-center text-sm text-muted-foreground'>
-                  {t('common.loading')}
-                </div>
-              ) : locations.length === 0 ? (
-                <div className='p-4 text-center text-sm text-muted-foreground'>
-                  {searchQuery.length < 2
-                    ? t('cargo.enterMinimum2Chars')
-                    : t('cargo.nothingFound')}
-                </div>
-              ) : (
-                <ScrollArea className='h-[300px]'>
-                  {locations.map((location) => (
-                    <div
-                      key={location.id}
-                      onClick={() => handleSelect(location)}
-                      className={cn(
-                        'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
-                        'hover:bg-muted'
-                      )}
-                    >
-                      <div className='flex-1'>
-                        <p className='text-sm font-medium'>
-                          {location.name}
-                          {location.level === 3 && location.parent_name && (
-                            <span className='text-muted-foreground'>
-                              {' '}
-                              - {location.parent_name}
-                            </span>
-                          )}
-                          {location.country_name && location.level !== 1 && (
-                            <span className='text-muted-foreground'>
-                              {', '}
-                              {location.country_name}
-                            </span>
-                          )}
-                        </p>
-                        {location.full_name && (
-                          <p className='text-xs text-muted-foreground'>
-                            {location.full_name}
+        <div className='relative group'>
+          <input
+            ref={inputRef}
+            type='text'
+            placeholder={placeholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+            className={cn(
+              'w-full h-10 px-4 py-2 rounded-md border transition-all duration-200',
+              'bg-background text-foreground placeholder:text-muted-foreground',
+              'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
+              'pr-10',
+              error
+                ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                : 'border-input hover:border-primary/50',
+              value.name && searchQuery === '' ? 'text-foreground' : ''
+            )}
+            aria-expanded={open}
+          />
+
+          {/* Show selected value */}
+          {value.name && searchQuery === '' && (
+            <div className='absolute right-10 top-0 h-full flex items-center text-sm'>
+              <span className='truncate max-w-[calc(100%-80px)] text-foreground'>
+                {value.name}
+              </span>
+            </div>
+          )}
+
+          {/* Clear button */}
+          {value.name && searchQuery === '' && (
+            <button
+              type='button'
+              onClick={clearSelection}
+              className='absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 group-hover:opacity-100 opacity-70 transition-opacity'
+              aria-label='Clear selection'
+            >
+              <X className='h-4 w-4' />
+            </button>
+          )}
+
+          {/* Search icon */}
+          <Search className='absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+        </div>
+
+        {/* Dropdown */}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.15 }}
+              className='absolute z-20 w-full mt-1 bg-background rounded-md border border-input shadow-md'
+            >
+              <div className='p-1'>
+                {isLoading ? (
+                  <div className='py-4 text-center'>
+                    <Loader2 className='h-5 w-5 animate-spin text-primary mx-auto' />
+                    <p className='text-sm text-muted-foreground mt-2'>
+                      {t('common.loading')}
+                    </p>
+                  </div>
+                ) : locations.length === 0 ? (
+                  <div className='p-4 text-center text-sm text-muted-foreground'>
+                    {searchQuery.length < 2
+                      ? t('cargo.enterMinimum2Chars')
+                      : t('cargo.nothingFound')}
+                  </div>
+                ) : (
+                  <ScrollArea className='h-[min(300px,50vh)]'>
+                    {locations.map((location) => (
+                      <div
+                        key={location.id}
+                        onClick={() => handleSelect(location)}
+                        className={cn(
+                          'flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer transition-colors',
+                          'hover:bg-primary/5 active:bg-primary/10',
+                          value.id === location.id.toString() && 'bg-primary/5'
+                        )}
+                      >
+                        <div className='flex-1'>
+                          <p className='text-sm font-medium text-foreground'>
+                            {location.name}
+                            {location.level === 3 && location.parent_name && (
+                              <span className='text-muted-foreground font-normal'>
+                                {' '}
+                                - {location.parent_name}
+                              </span>
+                            )}
+                            {location.country_name && location.level !== 1 && (
+                              <span className='text-muted-foreground font-normal'>
+                                {', '}
+                                {location.country_name}
+                              </span>
+                            )}
                           </p>
+                          {location.full_name && (
+                            <p className='text-xs text-muted-foreground'>
+                              {location.full_name}
+                            </p>
+                          )}
+                        </div>
+                        {value.id === location.id.toString() && (
+                          <Check className='h-4 w-4 text-primary shrink-0' />
                         )}
                       </div>
-                      {value.id === location.id.toString() && (
-                        <Check className='h-4 w-4' />
-                      )}
-                    </div>
-                  ))}
-                </ScrollArea>
-              )}
-            </div>
-          </div>
-        )}
+                    ))}
+                  </ScrollArea>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error message */}
         {error && errorMessage && (
-          <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className='text-sm text-red-500 mt-1 px-1'
+          >
+            {errorMessage}
+          </motion.p>
         )}
       </div>
     );
@@ -1176,7 +1394,7 @@ export default function CargoPage() {
         </label>
         <LocationSelector
           value={{
-            id: formData.loading_location,
+            id: formData.loading_location?.toString() || '',
             name: formData.loading_point,
           }}
           onChange={({ id, name }: any) => {
@@ -1195,7 +1413,7 @@ export default function CargoPage() {
         </label>
         <LocationSelector
           value={{
-            id: formData.unloading_location,
+            id: formData.unloading_location?.toString() || '',
             name: formData.unloading_point,
           }}
           onChange={({ id, name }: any) => {

@@ -2002,7 +2002,7 @@ import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 import { api } from '@/lib/api';
 import { useTranslation } from '@/contexts/i18n';
-
+import { AnimatePresence, motion } from 'framer-motion';
 interface Location {
   id: string;
   name: string;
@@ -2079,36 +2079,202 @@ const getVehicleTypeLabel = (value: string): string => {
   return vehicleType ? vehicleType.label : value;
 };
 
+// const LocationSelector = ({
+//   value,
+//   onChange,
+//   placeholder,
+//   error,
+//   errorMessage,
+// }: {
+//   value: { id: string; name: string };
+//   onChange: (value: { id: string; name: string }) => void;
+//   placeholder: string;
+//   error?: boolean;
+//   errorMessage?: string;
+// }) => {
+//   const [open, setOpen] = useState(false);
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [locations, setLocations] = useState<Location[]>([]);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const containerRef = useRef<HTMLDivElement>(null);
+
+//   // Handle outside click to close dropdown
+//   useEffect(() => {
+//     const handleClickOutside = (event: MouseEvent) => {
+//       if (
+//         containerRef.current &&
+//         !containerRef.current.contains(event.target as Node)
+//       ) {
+//         setOpen(false);
+//       }
+//     };
+
+//     document.addEventListener('mousedown', handleClickOutside);
+//     return () => {
+//       document.removeEventListener('mousedown', handleClickOutside);
+//     };
+//   }, []);
+
+//   // Search locations when typing
+//   useEffect(() => {
+//     if (searchQuery.length >= 2) {
+//       setIsLoading(true);
+//       setOpen(true);
+
+//       const timer = setTimeout(() => {
+//         api
+//           .searchLocations(searchQuery)
+//           .then((data) => {
+//             setLocations(Array.isArray(data) ? data : []);
+//             setIsLoading(false);
+//           })
+//           .catch((err) => {
+//             console.error('Search location error:', err);
+//             setLocations([]);
+//             setIsLoading(false);
+//           });
+//       }, 300);
+
+//       return () => clearTimeout(timer);
+//     } else {
+//       setLocations([]);
+//       if (searchQuery.length === 0) {
+//         setOpen(false);
+//       }
+//     }
+//   }, [searchQuery]);
+
+//   const handleSelect = (location: Location) => {
+//     onChange({
+//       id: location.id,
+//       name: location.full_name || location.name,
+//     });
+//     setSearchQuery('');
+//     setOpen(false);
+//   };
+
+//   const clearSelection = () => {
+//     onChange({ id: '', name: '' });
+//     setSearchQuery('');
+//   };
+
+//   return (
+//     <div className='relative w-full' ref={containerRef}>
+//       <div className='relative'>
+//         <Input
+//           placeholder={placeholder}
+//           value={searchQuery}
+//           onChange={(e) => setSearchQuery(e.target.value)}
+//           onFocus={() => searchQuery.length >= 2 && setOpen(true)}
+//           className={cn(error && 'border-red-500')}
+//         />
+
+//         {/* Show selected value */}
+//         {value.name && searchQuery === '' && (
+//           <div className='absolute right-8 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
+//             {value.name}
+//           </div>
+//         )}
+
+//         {/* Clear button */}
+//         {value.name && searchQuery === '' && (
+//           <button
+//             onClick={clearSelection}
+//             className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600'
+//           >
+//             <X className='h-4 w-4' />
+//           </button>
+//         )}
+//       </div>
+
+//       {open && (
+//         <div className='absolute z-10 w-full mt-1 bg-white rounded-md border shadow-md'>
+//           <div className='p-1'>
+//             {isLoading ? (
+//               <div className='p-4 text-center text-sm text-muted-foreground'>
+//                 Загрузка...
+//               </div>
+//             ) : locations.length === 0 ? (
+//               <div className='p-4 text-center text-sm text-muted-foreground'>
+//                 {searchQuery.length < 2
+//                   ? 'Введите минимум 2 символа для поиска'
+//                   : 'Ничего не найдено'}
+//               </div>
+//             ) : (
+//               <ScrollArea className='h-[300px]'>
+//                 {locations.map((location) => (
+//                   <div
+//                     key={location.id}
+//                     onClick={() => handleSelect(location)}
+//                     className={cn(
+//                       'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
+//                       'hover:bg-blue-50'
+//                     )}
+//                   >
+//                     <div className='flex-1'>
+//                       <p className='text-sm font-medium'>
+//                         {location.name}
+//                         {location.level === 3 && location.parent_name && (
+//                           <span className='text-gray-500'>
+//                             {' - '}
+//                             {location.parent_name}
+//                           </span>
+//                         )}
+//                         {location.country_name && location.level !== 1 && (
+//                           <span className='text-gray-500'>
+//                             {', '}
+//                             {location.country_name}
+//                           </span>
+//                         )}
+//                       </p>
+//                       {location.full_name && (
+//                         <p className='text-xs text-gray-500'>
+//                           {location.full_name}
+//                         </p>
+//                       )}
+//                     </div>
+//                     {value.id === location.id && <Check className='h-4 w-4' />}
+//                   </div>
+//                 ))}
+//               </ScrollArea>
+//             )}
+//           </div>
+//         </div>
+//       )}
+
+//       {error && errorMessage && (
+//         <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+//       )}
+//     </div>
+//   );
+// };
+
+// Enhanced LocationSelector for home page filter
 const LocationSelector = ({
   value,
   onChange,
   placeholder,
   error,
   errorMessage,
-}: {
-  value: { id: string; name: string };
-  onChange: (value: { id: string; name: string }) => void;
-  placeholder: string;
-  error?: boolean;
-  errorMessage?: string;
-}) => {
+}: any) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locations, setLocations] = useState<Location[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
-  // Handle outside click to close dropdown
+  // Handle click outside to close dropdown
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: any) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(event.target)
       ) {
         setOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -2120,7 +2286,6 @@ const LocationSelector = ({
     if (searchQuery.length >= 2) {
       setIsLoading(true);
       setOpen(true);
-
       const timer = setTimeout(() => {
         api
           .searchLocations(searchQuery)
@@ -2129,12 +2294,11 @@ const LocationSelector = ({
             setIsLoading(false);
           })
           .catch((err) => {
-            console.error('Search location error:', err);
+            console.error('Search error:', err);
             setLocations([]);
             setIsLoading(false);
           });
       }, 300);
-
       return () => clearTimeout(timer);
     } else {
       setLocations([]);
@@ -2144,7 +2308,7 @@ const LocationSelector = ({
     }
   }, [searchQuery]);
 
-  const handleSelect = (location: Location) => {
+  const handleSelect = (location: any) => {
     onChange({
       id: location.id,
       name: location.full_name || location.name,
@@ -2156,94 +2320,123 @@ const LocationSelector = ({
   const clearSelection = () => {
     onChange({ id: '', name: '' });
     setSearchQuery('');
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   return (
     <div className='relative w-full' ref={containerRef}>
-      <div className='relative'>
-        <Input
+      <div className='relative flex items-center'>
+        {/* Custom styled input for blue theme */}
+        <input
+          ref={inputRef}
+          type='text'
           placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => searchQuery.length >= 2 && setOpen(true)}
-          className={cn(error && 'border-red-500')}
+          className={cn(
+            'w-full p-2.5 rounded-md transition-all duration-200',
+            // Special styling for filter modal in blue theme
+            'bg-blue-500 text-white border-blue-400 placeholder:text-blue-200',
+            'focus:outline-none focus:ring-2 focus:ring-yellow-300/30 focus:border-yellow-400',
+            'hover:bg-blue-600',
+            error ? 'border-red-500' : 'border',
+            value.name && !searchQuery ? 'pr-8' : ''
+          )}
         />
 
-        {/* Show selected value */}
-        {value.name && searchQuery === '' && (
-          <div className='absolute right-8 top-0 h-full flex items-center pr-3 text-sm text-muted-foreground'>
-            {value.name}
+        {/* Selected location display */}
+        {value.name && !searchQuery && (
+          <div className='absolute left-0 right-8 px-3 pointer-events-none flex items-center h-full'>
+            <div className='truncate text-white font-medium'>{value.name}</div>
           </div>
         )}
 
         {/* Clear button */}
-        {value.name && searchQuery === '' && (
+        {value.name && !searchQuery && (
           <button
+            type='button'
             onClick={clearSelection}
-            className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600'
+            className='absolute right-3 text-blue-200 hover:text-white transition-colors'
+            aria-label='Clear selection'
           >
             <X className='h-4 w-4' />
           </button>
         )}
       </div>
 
-      {open && (
-        <div className='absolute z-10 w-full mt-1 bg-white rounded-md border shadow-md'>
-          <div className='p-1'>
-            {isLoading ? (
-              <div className='p-4 text-center text-sm text-muted-foreground'>
-                Загрузка...
-              </div>
-            ) : locations.length === 0 ? (
-              <div className='p-4 text-center text-sm text-muted-foreground'>
-                {searchQuery.length < 2
-                  ? 'Введите минимум 2 символа для поиска'
-                  : 'Ничего не найдено'}
-              </div>
-            ) : (
-              <ScrollArea className='h-[300px]'>
-                {locations.map((location) => (
-                  <div
-                    key={location.id}
-                    onClick={() => handleSelect(location)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
-                      'hover:bg-blue-50'
-                    )}
-                  >
-                    <div className='flex-1'>
-                      <p className='text-sm font-medium'>
-                        {location.name}
-                        {location.level === 3 && location.parent_name && (
-                          <span className='text-gray-500'>
-                            {' - '}
-                            {location.parent_name}
-                          </span>
-                        )}
-                        {location.country_name && location.level !== 1 && (
-                          <span className='text-gray-500'>
-                            {', '}
-                            {location.country_name}
-                          </span>
-                        )}
-                      </p>
-                      {location.full_name && (
-                        <p className='text-xs text-gray-500'>
-                          {location.full_name}
+      {/* Dropdown */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.2 }}
+            className='absolute z-50 w-full mt-1 bg-blue-700 border border-blue-500 rounded-md shadow-lg'
+          >
+            <div className='py-1'>
+              {isLoading ? (
+                <div className='p-4 text-center'>
+                  <Loader2 className='h-5 w-5 animate-spin text-yellow-400 mx-auto mb-2' />
+                  <p className='text-sm text-blue-200'>{t('common.loading')}</p>
+                </div>
+              ) : locations.length === 0 ? (
+                <div className='p-4 text-center text-sm text-blue-200'>
+                  {searchQuery.length < 2
+                    ? t('cargo.enterMinimum2Chars')
+                    : t('cargo.nothingFound')}
+                </div>
+              ) : (
+                <ScrollArea className='max-h-[300px]'>
+                  {locations.map((location) => (
+                    <div
+                      key={location.id}
+                      onClick={() => handleSelect(location)}
+                      className={cn(
+                        'flex items-center gap-2 mx-1 my-0.5 px-3 py-2 rounded cursor-pointer',
+                        'hover:bg-blue-600 active:bg-blue-500 transition-colors',
+                        value.id === location.id && 'bg-blue-600'
+                      )}
+                    >
+                      <div className='flex-1 min-w-0'>
+                        <p className='text-sm font-medium text-white truncate'>
+                          {location.name}
+                          {location.level === 3 && location.parent_name && (
+                            <span className='font-normal text-blue-200'>
+                              {' '}
+                              - {location.parent_name}
+                            </span>
+                          )}
                         </p>
+                        {location.country_name && location.level !== 1 && (
+                          <p className='text-xs text-blue-200 truncate'>
+                            {location.country_name}
+                          </p>
+                        )}
+                        {location.full_name && (
+                          <p className='text-xs text-blue-200 truncate'>
+                            {location.full_name}
+                          </p>
+                        )}
+                      </div>
+                      {value.id === location.id && (
+                        <Check className='h-4 w-4 text-yellow-400 flex-shrink-0' />
                       )}
                     </div>
-                    {value.id === location.id && <Check className='h-4 w-4' />}
-                  </div>
-                ))}
-              </ScrollArea>
-            )}
-          </div>
-        </div>
-      )}
+                  ))}
+                </ScrollArea>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
+      {/* Error message */}
       {error && errorMessage && (
-        <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+        <p className='text-sm text-red-300 mt-1'>{errorMessage}</p>
       )}
     </div>
   );
@@ -2424,7 +2617,7 @@ const FilterModal: React.FC<{
               <label className='text-white text-sm'>Откуда</label>
               <LocationSelector
                 value={filters.loading_location}
-                onChange={(value) =>
+                onChange={(value: any) =>
                   setFilters((prev) => ({
                     ...prev,
                     loading_location: value,
@@ -2438,7 +2631,7 @@ const FilterModal: React.FC<{
               <label className='text-white text-sm'>Куда</label>
               <LocationSelector
                 value={filters.unloading_location}
-                onChange={(value) =>
+                onChange={(value: any) =>
                   setFilters((prev) => ({
                     ...prev,
                     unloading_location: value,

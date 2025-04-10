@@ -2,6 +2,7 @@ import { Translations } from '@/contexts/i18n';
 
 export const uz: Translations = {
   common: {
+    ton: 'Tonna',
     loading: 'Yuklanmoqda...',
     error: 'Xatolik yuz berdi',
     save: 'Saqlash',
@@ -169,6 +170,10 @@ export const uz: Translations = {
     changePhoto: "Rasmni o'zgartirish",
   },
   cargo: {
+    notSpecified: "Ko'rsatilmagan",
+    distance: 'Masofa',
+    estimatedTime: 'Taxminiy vaqt',
+    negotiablePrice: 'Kelishilgan narx',
     title: 'Yuklar',
     addCargo: "Yuk qo'shish",
     myCargos: 'Mening yuklarim',
@@ -492,6 +497,12 @@ export const uz: Translations = {
   },
   favorites: {
     title: 'Saralanganlar',
+    errorFetching: 'Sevimlilarni yuklashda xatolik yuz berdi',
+    removedSuccess: "Sevimlilardan muvaffaqiyatli o'chirildi",
+    deleteFailed: "Sevimlilardan o'chirib bo'lmadi",
+    allCleared: "Barcha sevimlilar o'chirildi",
+    clearFailed: "Sevimlilarni tozalab bo'lmadi",
+    savedItem: 'Saqlangan element',
     total: 'Jami',
     clearAll: 'Hammasini tozalash',
     noFavorites: "Sizda hali saralangan elementlar yo'q",
