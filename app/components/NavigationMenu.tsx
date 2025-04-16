@@ -1,9 +1,10 @@
 'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { memo, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Home, Package, Menu, Heart, Car, WorkflowIcon } from 'lucide-react';
-import { memo, useEffect } from 'react';
 import { useTranslation } from '@/contexts/i18n';
 
 interface NavigationMenuProps {
@@ -15,10 +16,12 @@ const NavigationMenu = memo(function NavigationMenu({
 }: NavigationMenuProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
 
-  const isActive = (path: string) => {
-    return pathname === path ? 'text-blue-600' : '';
-  };
+  // Handle mounting to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Base menu items that all users can see
   const baseMenuItems = [
@@ -37,7 +40,7 @@ const NavigationMenu = memo(function NavigationMenu({
 
   // Get the user's role from localStorage to handle manager view specifically
   const userRoleFromStorage =
-    typeof window !== 'undefined'
+    typeof window !== 'undefined' && mounted
       ? JSON.parse(localStorage.getItem('logit_user_state') || '{}')
       : null;
 
@@ -55,23 +58,48 @@ const NavigationMenu = memo(function NavigationMenu({
     ...managerItems,
   ];
 
+  if (!mounted) {
+    return null; // Prevent hydration issues
+  }
+
   return (
-    <div className='fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 flex justify-between items-center'>
-      {menuItems.map((item) => (
-        <Link key={item.href} href={item.href} passHref>
-          <Button
-            variant='ghost'
-            size='sm'
-            className={`flex flex-col items-center relative ${isActive(
-              item.href
-            )}`}
-          >
-            <item.icon className='h-5 w-5' />
-            <span className='text-xs'>{item.label}</span>
-          </Button>
-        </Link>
-      ))}
-    </div>
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className='fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 flex justify-between items-center shadow-lg z-40'
+    >
+      {menuItems.map((item) => {
+        const isActive = pathname === item.href;
+        return (
+          <Link key={item.href} href={item.href} passHref>
+            <div className='relative flex flex-col items-center group'>
+              {isActive && (
+                <motion.div
+                  layoutId='navigation-indicator'
+                  className='absolute -top-2 w-1/2 h-1 bg-blue-600 rounded-full'
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+              <div
+                className={`flex flex-col items-center justify-center p-2 rounded-xl transition-colors ${
+                  isActive
+                    ? 'text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <item.icon
+                  className={`h-5 w-5 ${
+                    isActive ? 'scale-110' : ''
+                  } transition-transform`}
+                />
+                <span className='text-xs mt-1 font-medium'>{item.label}</span>
+              </div>
+            </div>
+          </Link>
+        );
+      })}
+    </motion.div>
   );
 });
 

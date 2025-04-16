@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Redirect based on user type and verification status
       if (!userData.type || !userData.role) {
-        router.push('/select-lang');
+        router.push('/');
       } else if (userData.role === 'carrier' && !userData.is_verified) {
         router.push('/driver-verification');
       } else {
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setUser(null);
-    router.push('/select-lang');
+    router.push('/');
   };
 
   const updateUser = async (data: Partial<User>) => {

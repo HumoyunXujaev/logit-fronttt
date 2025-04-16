@@ -208,7 +208,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         AuthService.logout();
-        window.location.href = '/select-lang';
+        window.location.href = '/';
         return Promise.reject(refreshError);
       }
     }

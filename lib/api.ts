@@ -76,7 +76,7 @@ export class ApiClient {
           } catch (refreshError) {
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
-            window.location.href = '/select-lang';
+            window.location.href = '/';
             return Promise.reject(refreshError);
           }
         }

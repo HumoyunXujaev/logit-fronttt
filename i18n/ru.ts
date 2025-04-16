@@ -1,4 +1,5 @@
 import { Translations } from '@/contexts/i18n';
+import { features } from 'process';
 
 export const ru: Translations = {
   common: {
@@ -34,6 +35,13 @@ export const ru: Translations = {
     download: 'Скачать',
     processing: 'Обработка...',
     loadMore: 'Загрузить еще',
+    from: 'От',
+    to: 'До',
+    minimum: 'Минимум',
+    maximum: 'Максимум',
+    copy: 'Копировать',
+    copiedToClipboard: 'Скопировано в буфер обмена',
+    kilometers: 'километров',
   },
   auth: {
     login: 'Войти',
@@ -101,6 +109,35 @@ export const ru: Translations = {
     thanks: 'Спасибо за сотрудничество!',
     start: 'Начать',
     carrierGreeting: 'Уважаемые перевозчики!',
+    features: {
+      // Существующие переводы
+      fastDelivery: 'Быстрая доставка',
+      fastDeliveryDesc:
+        'Найдите перевозчиков и отправляйте грузы в любую точку',
+      verified: 'Проверенные перевозчики',
+      verifiedDesc: 'Все перевозчики проходят строгую верификацию',
+      locations: 'Международная логистика',
+      locationsDesc: 'Перевозки по всему миру и точный расчет маршрутов',
+
+      // Недостающие переводы
+      tracking: 'Отслеживание грузов',
+      trackingDesc: 'Следите за перемещением вашего груза в реальном времени',
+      rating: 'Система рейтинга',
+      ratingDesc: 'Оценивайте качество услуг и выбирайте лучших перевозчиков',
+    },
+    atLeastOneFilter: 'Укажите хотя бы один критерий фильтра',
+    invalidWeightRange: 'Минимальный вес не может быть больше максимального',
+    saveFilter: 'Сохранить фильтр',
+    filterName: 'Название фильтра',
+    applyFilter: 'Применить фильтр',
+    enableNotificationsForNewCargos: 'Включить уведомления о новых грузах',
+    filterSavedSuccess: 'Фильтр сохранен с уведомлениями',
+    filterSaveError: 'Ошибка при сохранении фильтра',
+    searchRadiusDescription:
+      'Поиск будет осуществляться в радиусе {radius} км от указанных точек',
+    activeFilters: 'Активные фильтры',
+    highRating: 'Высокий рейтинг',
+    verifiedProfile: 'Проверенный профиль',
   },
   registration: {
     title: 'Пройти регистрацию',
@@ -181,6 +218,15 @@ export const ru: Translations = {
     weight: 'Вес',
     volume: 'Объем',
     dimensions: 'Габариты',
+    highRating: 'Высокий рейтинг',
+    verifiedProfile: 'Проверенный профиль',
+    // Ошибки загрузки данных
+    errorLoadingCargos: 'Ошибка при загрузке грузов',
+    errorLoadingAssignedCargos: 'Ошибка при загрузке назначенных грузов',
+    errorLoadingMore: 'Ошибка при загрузке дополнительных результатов',
+    errorProcessingCargo: 'Ошибка при обработке груза',
+    cargoAcceptedSuccessfully: 'Груз успешно принят',
+    cargoRejectedSuccessfully: 'Груз успешно отклонен',
     length: 'Длина',
     width: 'Ширина',
     height: 'Высота',
@@ -377,6 +423,9 @@ export const ru: Translations = {
     basedOn: 'На основе {{count}} отзывов',
     received: 'Полученные',
     given: 'Оставленные',
+    userToRateError: 'Ошибка: пользователь для оценки не найден',
+    ratingSuccess: 'Оценка успешно отправлена',
+    ratingError: 'Ошибка при отправке оценки',
     canLeave: 'Можете оставить',
     noReceivedReviews: 'У вас пока нет полученных отзывов',
     noGivenReviews: 'Вы пока не оставили ни одного отзыва',
@@ -496,6 +545,7 @@ export const ru: Translations = {
     saveSettings: 'Настройки сохранены',
   },
   favorites: {
+    favoriteToggleError: 'Ошибка при изменении статуса избранного',
     title: 'Избранное',
     total: 'Всего',
     clearAll: 'Очистить все',
@@ -538,6 +588,9 @@ export const ru: Translations = {
   },
   manager: {
     panelTitle: 'Панель менеджера',
+    approveSuccess: 'Груз успешно одобрен',
+    rejectSuccess: 'Груз успешно отклонен',
+    actionError: 'Ошибка при выполнении действия',
     pendingApproval: 'Ожидают проверки',
     approvedCargos: 'Одобренные грузы',
     allCargos: 'Все грузы',
@@ -589,6 +642,8 @@ export const ru: Translations = {
   },
   notifications: {
     enableNotifications: 'Включить уведомления?',
+    notificationsEnabled: 'Уведомления включены',
+    enableNotificationsError: 'Не удалось включить уведомления',
     notificationMessage:
       'Вы будете получать уведомления о новых предложениях по этому направлению и типу груза.',
     enableButton: 'Включить',

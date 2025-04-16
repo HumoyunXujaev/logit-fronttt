@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,15 +18,24 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Clock,
+  Search,
+  PackageIcon,
+  TruckIcon,
+  MapPin,
+  CreditCardIcon,
+  Calendar,
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import NavigationMenu from '../components/NavigationMenu';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatDate } from '@/lib/utils';
 import { useTranslation } from '@/contexts/i18n';
+import { Input } from '@/components/ui/input';
 
 interface ServerFavorite {
   id: string;
@@ -48,19 +58,60 @@ export default function FavoritesPage() {
   const router = useRouter();
   const { userState } = useUser();
   const { t } = useTranslation();
-
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [favorites, setFavorites] = useState<DetailedFavorite[]>([]);
+  const [filteredFavorites, setFilteredFavorites] = useState<
+    DetailedFavorite[]
+  >([]);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+      },
+    },
+  };
 
   // Fetch favorites from server
   useEffect(() => {
     fetchFavorites();
   }, []);
+
+  // Filter favorites based on search
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredFavorites(favorites);
+    } else {
+      const filtered = favorites.filter(
+        (favorite) =>
+          favorite.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          favorite.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredFavorites(filtered);
+    }
+  }, [searchQuery, favorites]);
 
   const fetchFavorites = async () => {
     try {
@@ -72,6 +123,7 @@ export default function FavoritesPage() {
 
       if (!response.results || response.results.length === 0) {
         setFavorites([]);
+        setFilteredFavorites([]);
         setIsLoading(false);
         return;
       }
@@ -84,7 +136,17 @@ export default function FavoritesPage() {
       );
 
       // Filter out any null results (failed fetches)
-      setFavorites(detailedFavorites.filter(Boolean) as DetailedFavorite[]);
+      const validFavorites = detailedFavorites.filter(
+        Boolean
+      ) as DetailedFavorite[];
+
+      // Keep only cargo favorites as requested
+      const cargoFavorites = validFavorites.filter(
+        (fav) => fav.type === 'cargo'
+      );
+
+      setFavorites(cargoFavorites);
+      setFilteredFavorites(cargoFavorites);
     } catch (error) {
       console.error('Error fetching favorites:', error);
       setError(t('favorites.errorFetching'));
@@ -98,12 +160,10 @@ export default function FavoritesPage() {
     favorite: ServerFavorite
   ): Promise<DetailedFavorite | null> => {
     try {
-      // Determine the API endpoint based on content_type
-      let detailsData;
-
+      // We're only interested in cargo items
       if (favorite.content_type === 'cargo') {
         const response = await api.get(`/cargo/cargos/${favorite.object_id}/`);
-        detailsData = {
+        return {
           id: response.id,
           favoriteId: favorite.id,
           type: 'cargo',
@@ -120,57 +180,13 @@ export default function FavoritesPage() {
             [t('cargo.price')]: response.price
               ? `${response.price} ₽`
               : t('cargo.negotiablePrice'),
+            [t('cargo.loadingDate')]: new Date(
+              response.loading_date
+            ).toLocaleDateString(),
           },
-        };
-      } else if (favorite.content_type === 'carrier') {
-        const response = await api.get(`/vehicles/${favorite.object_id}/`);
-        detailsData = {
-          id: response.id,
-          favoriteId: favorite.id,
-          type: 'carrier',
-          title: `${response.registration_number}`,
-          description: `${t(`cargo.${response.body_type}`)}`,
-          createdAt: favorite.created_at,
-          details: {
-            [t('vehicle.capacity')]: `${response.capacity} ${t('common.ton')}`,
-            [t('cargo.volume')]: response.volume
-              ? `${response.volume} m³`
-              : t('cargo.notSpecified'),
-            [t(
-              'vehicle.dimensions'
-            )]: `${response.length}x${response.width}x${response.height} m`,
-            [t('cargo.loadingType')]: t(`cargo.${response.loading_type}`),
-          },
-        };
-      } else if (favorite.content_type === 'route') {
-        // Example for route - adjust according to your API structure
-        const response = await api.get(`/core/routes/${favorite.object_id}/`);
-        detailsData = {
-          id: response.id,
-          favoriteId: favorite.id,
-          type: 'route',
-          title: `${response.origin} - ${response.destination}`,
-          description: response.description || '',
-          createdAt: favorite.created_at,
-          details: {
-            [t('cargo.distance')]: `${response.distance} km`,
-            [t('cargo.estimatedTime')]: response.estimated_time,
-          },
-        };
-      } else {
-        // Generic fallback
-        detailsData = {
-          id: favorite.object_id,
-          favoriteId: favorite.id,
-          type: favorite.content_type,
-          title: t('favorites.savedItem'),
-          description: '',
-          createdAt: favorite.created_at,
-          details: {},
         };
       }
-
-      return detailsData;
+      return null;
     } catch (error) {
       console.error(
         `Failed to fetch details for favorite ${favorite.id}:`,
@@ -184,19 +200,6 @@ export default function FavoritesPage() {
     setExpandedItems((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };
-
-  const getFavoriteIcon = (type: string) => {
-    switch (type) {
-      case 'cargo':
-        return '📦';
-      case 'route':
-        return '🚚';
-      case 'carrier':
-        return '🚛';
-      default:
-        return '❤️';
-    }
   };
 
   const handleDelete = (id: string) => {
@@ -215,6 +218,10 @@ export default function FavoritesPage() {
       setFavorites((prev) =>
         prev.filter((item) => item.favoriteId !== itemToDelete)
       );
+      setFilteredFavorites((prev) =>
+        prev.filter((item) => item.favoriteId !== itemToDelete)
+      );
+
       toast.success(t('favorites.removedSuccess'));
     } catch (error) {
       console.error('Error deleting favorite:', error);
@@ -236,6 +243,7 @@ export default function FavoritesPage() {
       }
 
       setFavorites([]);
+      setFilteredFavorites([]);
       toast.success(t('favorites.allCleared'));
     } catch (error) {
       console.error('Error clearing favorites:', error);
@@ -245,175 +253,250 @@ export default function FavoritesPage() {
     }
   };
 
-  // Group favorites by type
-  const groupedFavorites = favorites.reduce(
-    (acc: Record<string, DetailedFavorite[]>, item) => {
-      if (!acc[item.type]) {
-        acc[item.type] = [];
-      }
-      acc[item.type].push(item);
-      return acc;
-    },
-    {} as Record<string, DetailedFavorite[]>
-  );
-
   return (
-    <div className='min-h-screen bg-gray-50 p-4 pb-20'>
-      <div className='flex items-center mb-6'>
-        <Button variant='ghost' onClick={() => router.back()} className='mr-2'>
-          <ArrowLeft className='h-6 w-6' />
-        </Button>
-        <h1 className='text-2xl font-bold'>{t('favorites.title')}</h1>
-      </div>
-
-      <div className='flex justify-between items-center mb-4'>
-        <div className='flex items-center'>
-          <Heart className='h-5 w-5 mr-2 text-red-500' />
-          <span className='font-semibold'>
-            {t('favorites.total')}: {favorites.length}
-          </span>
-        </div>
-        {favorites.length > 0 && (
+    <div className='min-h-screen bg-gradient-to-b from-blue-700 to-blue-600 p-4 pb-20'>
+      <motion.div
+        initial='hidden'
+        animate='visible'
+        variants={containerVariants}
+        className='max-w-md mx-auto sm:max-w-lg md:max-w-2xl'
+      >
+        {/* Header section */}
+        <motion.div
+          variants={itemVariants}
+          className='flex items-center mb-6 bg-white p-3 rounded-lg shadow-md'
+        >
           <Button
-            variant='outline'
-            size='sm'
-            onClick={clearAllFavorites}
-            disabled={isDeleting}
+            variant='ghost'
+            onClick={() => router.back()}
+            className='mr-4 hover:bg-blue-100'
           >
-            {isDeleting ? (
-              <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-            ) : (
-              <Trash2 className='h-4 w-4 mr-2' />
-            )}
-            {t('favorites.clearAll')}
+            <ArrowLeft className='h-6 w-6 text-blue-600' />
           </Button>
-        )}
-      </div>
+          <h1 className='text-2xl font-bold text-blue-800'>
+            {t('favorites.title')}
+          </h1>
+        </motion.div>
 
-      {isLoading ? (
-        <div className='flex justify-center items-center py-20'>
-          <Loader2 className='h-8 w-8 animate-spin text-blue-600' />
-          <span className='ml-2 text-blue-600'>{t('common.loading')}</span>
-        </div>
-      ) : error ? (
-        <div className='bg-red-50 p-4 rounded-lg text-red-500 text-center'>
-          {error}
-        </div>
-      ) : (
-        <AnimatePresence mode='popLayout'>
-          {Object.entries(groupedFavorites).length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className='text-center py-8 text-gray-500'
+        {/* Search & Actions Bar */}
+        <motion.div
+          variants={itemVariants}
+          className='mb-6 flex flex-col sm:flex-row gap-3'
+        >
+          <div className='relative flex-1'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
+            <Input
+              className='pl-10 bg-white border-gray-200'
+              placeholder={t('common.search')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className='flex items-center bg-white px-4 py-2 rounded-lg shadow-md'>
+            <Heart className='h-5 w-5 mr-2 text-red-500' />
+            <span className='font-medium text-gray-700'>
+              {t('favorites.total')}: {filteredFavorites.length}
+            </span>
+          </div>
+
+          {favorites.length > 0 && (
+            <Button
+              variant='outline'
+              onClick={clearAllFavorites}
+              disabled={isDeleting}
+              className='border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700'
             >
-              {t('favorites.noFavorites')}
-            </motion.div>
-          ) : (
-            Object.entries(groupedFavorites).map(([type, items]) => (
+              {isDeleting ? (
+                <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+              ) : (
+                <Trash2 className='h-4 w-4 mr-2' />
+              )}
+              {t('favorites.clearAll')}
+            </Button>
+          )}
+        </motion.div>
+
+        {/* Main content */}
+        {isLoading ? (
+          <motion.div
+            variants={itemVariants}
+            className='flex flex-col justify-center items-center py-20 bg-white rounded-lg shadow-md'
+          >
+            <Loader2 className='h-10 w-10 animate-spin text-blue-600 mb-4' />
+            <span className='text-blue-600 animate-pulse'>
+              {t('common.loading')}
+            </span>
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            variants={itemVariants}
+            className='bg-red-50 border border-red-200 p-6 rounded-lg text-red-600 text-center flex flex-col items-center'
+          >
+            <AlertCircle className='h-10 w-10 mb-3' />
+            <p>{error}</p>
+          </motion.div>
+        ) : (
+          <AnimatePresence mode='popLayout'>
+            {filteredFavorites.length === 0 ? (
               <motion.div
-                key={type}
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className='mb-6'
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className='flex flex-col items-center justify-center py-16 px-4 bg-white rounded-lg shadow-md text-center'
               >
-                <h2 className='text-lg font-semibold mb-3 flex items-center'>
-                  {getFavoriteIcon(type)}{' '}
-                  <span className='ml-2'>{t(`favorites.types.${type}`)}</span>
-                  <Badge variant='secondary' className='ml-2'>
-                    {items.length}
-                  </Badge>
-                </h2>
-                <AnimatePresence mode='popLayout'>
-                  {items.map((item) => (
-                    <motion.div
-                      key={item.favoriteId}
-                      layout
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Card className='mb-3'>
-                        <CardContent className='p-4'>
-                          <div className='flex justify-between items-start'>
-                            <div className='flex-1'>
-                              <div className='flex items-center justify-between'>
-                                <h3 className='font-medium'>{item.title}</h3>
-                                <Button
-                                  variant='ghost'
-                                  size='sm'
-                                  onClick={() => handleDelete(item.favoriteId)}
-                                  disabled={isDeleting}
-                                >
-                                  <Trash2 className='h-4 w-4 text-red-500' />
-                                </Button>
-                              </div>
-                              <p className='text-sm text-gray-500 mb-2'>
-                                {formatDate(item.createdAt)}
-                              </p>
-                              <p className='text-sm'>{item.description}</p>
-                              <AnimatePresence>
-                                {expandedItems.includes(item.favoriteId) && (
-                                  <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    className='mt-4 space-y-2 text-sm'
-                                  >
-                                    {Object.entries(item.details).map(
-                                      ([key, value]) => (
-                                        <p key={key}>
-                                          <span className='font-medium'>
-                                            {key}:{' '}
-                                          </span>{' '}
-                                          {value as React.ReactNode}
-                                        </p>
-                                      )
-                                    )}
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
+                <div className='w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mb-6'>
+                  <Heart className='h-10 w-10 text-blue-500' />
+                </div>
+                <h3 className='text-xl font-semibold text-blue-800 mb-2'>
+                  {t('favorites.noFavorites')}
+                </h3>
+                <p className='text-gray-600 max-w-xs'>
+                  {searchQuery
+                    ? t('cargo.nothingFound')
+                    : t('favorites.addFavoritesDescription')}
+                </p>
+                {searchQuery && (
+                  <Button
+                    variant='outline'
+                    className='mt-4'
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X className='h-4 w-4 mr-2' />
+                    {t('common.clear')}
+                  </Button>
+                )}
+              </motion.div>
+            ) : (
+              <div className='space-y-4'>
+                {filteredFavorites.map((item) => (
+                  <motion.div
+                    key={item.favoriteId}
+                    layout
+                    variants={itemVariants}
+                    initial='hidden'
+                    animate='visible'
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    <Card className='overflow-hidden bg-white border-0 shadow-md hover:shadow-lg transition-all'>
+                      <CardContent className='p-0'>
+                        {/* Card Header */}
+                        <div className='flex justify-between items-start p-4 bg-blue-50 border-b border-blue-100'>
+                          <div className='flex-1'>
+                            <div className='flex items-center gap-2 mb-1'>
+                              <PackageIcon className='h-12 w-12 text-blue-500' />
+                              <h3 className='font-semibold text-blue-800'>
+                                {item.title}
+                              </h3>
+                            </div>
+
+                            <div className='flex items-center text-xs text-gray-500'>
+                              <Clock className='h-3 w-3 mr-1 inline' />
+                              {formatDate(item.createdAt)}
                             </div>
                           </div>
+
                           <Button
                             variant='ghost'
                             size='sm'
-                            onClick={() => toggleExpand(item.favoriteId)}
-                            className='mt-2 w-full'
+                            onClick={() => handleDelete(item.favoriteId)}
+                            disabled={isDeleting}
+                            className='text-red-500 hover:text-red-600 hover:bg-red-50 h-12 w-12 rounded-full'
                           >
-                            {expandedItems.includes(item.favoriteId) ? (
-                              <>
-                                <ChevronUp className='h-4 w-4 mr-2' />
-                                {t('favorites.hideDetails')}
-                              </>
-                            ) : (
-                              <>
-                                <ChevronDown className='h-4 w-4 mr-2' />
-                                {t('favorites.showDetails')}
-                              </>
-                            )}
+                            <Trash2 className='h-4 w-4' />
                           </Button>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            ))
-          )}
-        </AnimatePresence>
-      )}
+                        </div>
 
+                        {/* Main content */}
+                        {item.description && (
+                          <div className='px-4 py-2 text-sm text-gray-700 border-b border-gray-100'>
+                            {item.description}
+                          </div>
+                        )}
+
+                        {/* Cargo details summary */}
+                        <div className='px-4 py-3 grid grid-cols-2 gap-4 text-sm'>
+                          <div className='flex items-center text-gray-700'>
+                            <TruckIcon className='h-4 w-4 mr-2 text-blue-500' />
+                            {item.details[t('cargo.weight')]}
+                          </div>
+                          <div className='flex items-center text-gray-700'>
+                            <Calendar className='h-4 w-4 mr-2 text-blue-500' />
+                            {item.details[t('cargo.loadingDate')]}
+                          </div>
+                          <div className='flex items-center text-gray-700'>
+                            <MapPin className='h-4 w-4 mr-2 text-blue-500' />
+                            {item.details[t('cargo.vehicleType')]}
+                          </div>
+                          <div className='flex items-center text-gray-700'>
+                            <CreditCardIcon className='h-4 w-4 mr-2 text-blue-500' />
+                            {item.details[t('cargo.price')]}
+                          </div>
+                        </div>
+
+                        {/* Expanded details */}
+                        <AnimatePresence>
+                          {expandedItems.includes(item.favoriteId) && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className='px-4 py-3 space-y-2 border-t border-gray-100 bg-gray-50'
+                            >
+                              {Object.entries(item.details).map(
+                                ([key, value]) => (
+                                  <div
+                                    key={key}
+                                    className='flex justify-between items-center'
+                                  >
+                                    <p className='text-sm font-medium text-gray-600'>
+                                      {key}:
+                                    </p>
+                                    <p className='text-sm text-gray-800'>
+                                      {value as React.ReactNode}
+                                    </p>
+                                  </div>
+                                )
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Toggle details button */}
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => toggleExpand(item.favoriteId)}
+                          className='w-full flex items-center justify-center py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-none border-t border-gray-100'
+                        >
+                          {expandedItems.includes(item.favoriteId) ? (
+                            <ChevronUp className='h-4 w-4 mr-2' />
+                          ) : (
+                            <ChevronDown className='h-4 w-4 mr-2' />
+                          )}
+                          {expandedItems.includes(item.favoriteId)
+                            ? t('favorites.hideDetails')
+                            : t('favorites.showDetails')}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </AnimatePresence>
+        )}
+      </motion.div>
+
+      {/* Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
+        <DialogContent className='bg-white border-0'>
           <DialogHeader>
             <DialogTitle>{t('favorites.deleteConfirmation')}</DialogTitle>
           </DialogHeader>
-          <p>{t('favorites.deleteConfirmMessage')}</p>
+          <p className='py-4'>{t('favorites.deleteConfirmMessage')}</p>
           <DialogFooter className='flex justify-end space-x-2 mt-4'>
             <Button
               variant='outline'

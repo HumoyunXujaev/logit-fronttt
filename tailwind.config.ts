@@ -50,6 +50,10 @@ const config: Config = {
         'fade-out': 'fade-out 0.2s ease-in',
         'slide-in': 'slide-in 0.3s ease-out',
         'slide-out': 'slide-out 0.2s ease-in',
+        'truck-move': 'truck-move 0.8s ease-in-out',
+        'progress-gleam': 'progress-gleam 1.5s infinite',
+        'bounce-subtle': 'bounce-subtle 1s ease-in-out infinite',
+        'spin-slow': 'spin 3s linear infinite',
       },
       keyframes: {
         'accordion-down': {
@@ -75,6 +79,18 @@ const config: Config = {
         'slide-out': {
           '0%': { transform: 'translateY(0)', opacity: '1' },
           '100%': { transform: 'translateY(-10px)', opacity: '0' },
+        },
+        'truck-move': {
+          '0%': { transform: 'translateX(-10%)' },
+          '100%': { transform: 'translateX(110%)' },
+        },
+        'progress-gleam': {
+          '0%': { left: '-20%' },
+          '100%': { left: '120%' },
+        },
+        'bounce-subtle': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-4px)' },
         },
       },
     },

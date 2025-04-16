@@ -1,4 +1,5 @@
 import { Translations } from '@/contexts/i18n';
+import { features } from 'process';
 
 export const uz: Translations = {
   common: {
@@ -33,6 +34,14 @@ export const uz: Translations = {
     download: 'Yuklab olish',
     processing: 'Ishlayapti...',
     loadMore: "Ko'proq yuklash",
+    filtersReset: 'Filtrlar tiklandi',
+    from: 'Kimdan',
+    to: 'Kimga',
+    minimum: 'Minimal',
+    maximum: 'Maksimal',
+    copy: 'Nusxalash',
+    copiedToClipboard: 'Buferga nusxalandi',
+    kilometers: 'kilometr',
   },
   auth: {
     login: 'Kirish',
@@ -100,6 +109,38 @@ export const uz: Translations = {
     thanks: 'Hamkorlik uchun rahmat!',
     start: 'Boshlash',
     carrierGreeting: 'Hurmatli tashuvchilar!',
+    features: {
+      // Существующие переводы
+      fastDelivery: 'Tez yetkazib berish',
+      fastDeliveryDesc:
+        "Tashuvchilarni toping va yuklarni istalgan joyga jo'nating",
+      verified: 'Tekshirilgan tashuvchilar',
+      verifiedDesc: "Barcha tashuvchilar qat'iy tekshiruvdan o'tishadi",
+      locations: 'Xalqaro logistika',
+      locationsDesc: "Butun dunyo bo'ylab tashish va aniq yo'nalish hisoblash",
+
+      // Недостающие переводы
+      tracking: 'Yuklarni kuzatish',
+      trackingDesc: 'Yukingizning harakatini real vaqt rejimida kuzatib boring',
+      rating: 'Reyting tizimi',
+      ratingDesc:
+        'Xizmat sifatini baholang va eng yaxshi tashuvchilarni tanlang',
+    },
+    atLeastOneFilter: "Kamida bitta filter mezonini ko'rsating",
+    invalidWeightRange:
+      "Minimal og'irlik maksimal og'irlikdan katta bo'lishi mumkin emas",
+    saveFilter: 'Filterni saqlash',
+    filterName: 'Filter nomi',
+    applyFilter: "Filterni qo'llash",
+    enableNotificationsForNewCargos:
+      'Yangi yuklar haqida bildirishnomalarni yoqish',
+    filterSavedSuccess: 'Filter bildirishnomalar bilan saqlandi',
+    filterSaveError: 'Filterni saqlashda xatolik yuz berdi',
+    searchRadiusDescription:
+      "Qidiruv ko'rsatilgan nuqtalardan {radius} km radiusda amalga oshiriladi",
+    activeFilters: 'Faol filtrlar',
+    highRating: 'Yuqori reyting',
+    verifiedProfile: 'Tekshirilgan profil',
   },
   registration: {
     title: "Ro'yxatdan o'tish",
@@ -192,6 +233,15 @@ export const uz: Translations = {
     unloadingPoint: 'Tushirish joyi',
     transport: 'Transport',
     vehicleType: 'Transport turi',
+    highRating: 'Yuqori reyting',
+    verifiedProfile: 'Tekshirilgan profil',
+    errorLoadingCargos: 'Yuklarni yuklashda xatolik yuz berdi',
+    errorLoadingAssignedCargos:
+      'Belgilangan yuklarni yuklashda xatolik yuz berdi',
+    errorLoadingMore: "Qo'shimcha natijalarni yuklashda xatolik yuz berdi",
+    errorProcessingCargo: 'Yukni qayta ishlashda xatolik yuz berdi',
+    cargoAcceptedSuccessfully: 'Yuk muvaffaqiyatli qabul qilindi',
+    cargoRejectedSuccessfully: 'Yuk muvaffaqiyatli rad etildi',
     loadingType: 'Yuklash turi',
     when: 'Qachon',
     loadingDate: 'Yuklash sanasi',
@@ -504,6 +554,10 @@ export const uz: Translations = {
     clearFailed: "Sevimlilarni tozalab bo'lmadi",
     savedItem: 'Saqlangan element',
     total: 'Jami',
+    favoriteToggleError:
+      "Saralanganlar holatini o'zgartirishda xatolik yuz berdi",
+    addedToFavorites: "Muvaffaqiyatli saralanganlarga qo'shildi",
+    removedFromFavorites: 'Muvaffaqiyatli saralanganlardan olib tashlandi',
     clearAll: 'Hammasini tozalash',
     noFavorites: "Sizda hali saralangan elementlar yo'q",
     types: {
@@ -545,6 +599,9 @@ export const uz: Translations = {
     confirmReject: 'Bu yukni rad etishga ishonchingiz komilmi?',
     addComment: "Izoh qo'shish (ixtiyoriy)",
     processing: 'Qayta ishlash...',
+    approveSuccess: 'Yuk muvaffaqiyatli tasdiqlandi',
+    rejectSuccess: 'Yuk muvaffaqiyatli rad etildi',
+    actionError: 'Amalni bajarishda xatolik yuz berdi',
   },
   errors: {
     pageNotFound: 'Sahifa topilmadi',
@@ -594,6 +651,8 @@ export const uz: Translations = {
     alreadyHaveNotifications:
       'Bu yuk uchun bildirishnomalar allaqachon yoqilgan',
     understood: 'Tushunarli',
+    notificationsEnabled: 'Bildirishnomalar yoqildi',
+    enableNotificationsError: 'Bildirishnomalarni yoqishda xatolik yuz berdi',
   },
   debug: {
     debugTools: 'Debug Asboblari',

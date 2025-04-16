@@ -77,7 +77,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             } else if (!hasSelectedTestUser) {
               // If user doesn't exist and we don't have a selected test user,
               // start registration process
-              router.push('/select-lang');
+              router.push('/');
             }
           }
         }
