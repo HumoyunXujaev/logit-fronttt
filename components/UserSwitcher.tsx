@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { AuthService } from '@/lib/auth';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // Define test users with different roles
 const TEST_USERS = [
@@ -175,9 +176,11 @@ const setupPersistentTestUser = async () => {
 const UserSwitcher: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string>('');
-  const { userState, logout } = useUser();
+  const { userState, logout, setUserData, setUserRole, setUserType } =
+    useUser();
   const [isSwitching, setIsSwitching] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const router = useRouter();
 
   // Initialize with the stored test user on mount
   useEffect(() => {
@@ -218,8 +221,8 @@ const UserSwitcher: React.FC = () => {
     button.style.border = 'none';
     button.style.fontSize = '12px';
     button.onclick = () => setIsOpen(true);
-
     document.body.appendChild(button);
+
     return () => {
       document.body.removeChild(button);
     };
@@ -264,6 +267,7 @@ const UserSwitcher: React.FC = () => {
             preferred_language: 'ru',
           },
         });
+
         toast.success(`Created and logged in as ${testUser.name}`);
       } else {
         toast.success(`Logged in as ${testUser.name}`);
@@ -272,11 +276,62 @@ const UserSwitcher: React.FC = () => {
       // Restore original Telegram WebApp
       restoreTelegramWebApp();
 
+      // Get user profile data
+      try {
+        const userData = await AuthService.getProfile();
+
+        // Directly update the UserContext
+        if (userData) {
+          // Important: Update the user context with the new role and type
+          await setUserRole(testUser.role as any);
+          await setUserType(testUser.type as any);
+
+          // Force manual update of userData for completeness
+          await setUserData({
+            ...userData,
+            type: testUser.type,
+            role: testUser.role,
+            preferred_language: 'ru',
+            isAuthenticated: true,
+          });
+
+          // Manually update the logit_user_state to ensure it has the correct role
+          const userState = {
+            type: testUser.type,
+            role: testUser.role,
+            language: 'ru',
+            isAuthenticated: true,
+          };
+          localStorage.setItem('logit_user_state', JSON.stringify(userState));
+
+          console.log('User context and localStorage updated with:', userState);
+        }
+      } catch (profileError) {
+        console.error('Error fetching user profile:', profileError);
+
+        // Even if profile fetch fails, still update user context with test user data
+        await setUserRole(testUser.role as any);
+        await setUserType(testUser.type as any);
+
+        const userState = {
+          type: testUser.type,
+          role: testUser.role,
+          language: 'ru',
+          isAuthenticated: true,
+        };
+        localStorage.setItem('logit_user_state', JSON.stringify(userState));
+
+        console.log(
+          'User context and localStorage manually updated with:',
+          userState
+        );
+      }
+
       // Close dialog
       setIsOpen(false);
 
-      // Redirect to home page
-      window.location.href = '/menu';
+      // Redirect to menu page using router instead of full page reload
+      router.push('/menu');
     } catch (error) {
       console.error('Error switching user:', error);
       toast.error('Failed to switch user');
