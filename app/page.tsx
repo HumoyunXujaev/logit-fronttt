@@ -24,6 +24,7 @@ declare global {
         viewportStableHeight: number;
         enableClosingConfirmation(): unknown;
         ready(): unknown;
+        openTelegramLink(url: any): any;
         expand(): unknown;
         close(): unknown;
         onEvent(eventType: any, eventHandler: any): unknown;

@@ -617,6 +617,28 @@ export class ApiClient {
     }
   }
 
+  public searchUsers = async (
+    query = '',
+    role = '',
+    type = '',
+    verified = ''
+  ) => {
+    try {
+      const params = new URLSearchParams();
+      if (query) params.append('q', query);
+      if (role) params.append('role', role);
+      if (type) params.append('type', type);
+      if (verified) params.append('verified', verified);
+
+      const response = await this.api.get(`/users/search/?${params}`);
+
+      return response.data;
+    } catch (error) {
+      console.error('search error:', error);
+      throw error;
+    }
+  };
+
   public async updateRating(
     id: string,
     data: {

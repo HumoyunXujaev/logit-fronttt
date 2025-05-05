@@ -41,7 +41,7 @@ app.prepare().then(() => {
     const bot = telegramBotService.startBot();
 
     if (bot) {
-      console.log('Telegram bot started successfully');
+      console.log('Yeah, Telegram bot started successfully');
     } else {
       console.error('Failed to start Telegram bot');
     }

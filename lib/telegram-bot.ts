@@ -50,7 +50,9 @@ class TelegramBotService {
         this.setupMessageHandlers();
 
         this.isInitialized = true;
-        console.log('Telegram bot started successfully');
+        console.log(
+          'Telegram bot started successfully (tgbotservice at lib/tg)'
+        );
         return this.bot;
       } catch (error) {
         console.error('Failed to start Telegram bot:', error);

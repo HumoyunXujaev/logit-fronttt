@@ -54,7 +54,7 @@ export default function RegistrationPage() {
         ...prev,
         fullName:
           user.first_name + (user.last_name ? ` ${user.last_name}` : ''),
-        telegramNumber: user.username ? `@${user.username}` : '',
+        username: user.username ? `@${user.username}` : '',
       }));
     }
   }, [userState.role, router]);
@@ -217,10 +217,10 @@ export default function RegistrationPage() {
             {t('registration.telegram')}
           </label>
           <Input
-            name='telegramNumber'
+            name='username'
             placeholder={t('registration.telegram')}
             onChange={handleInputChange}
-            value={formData?.telegramNumber || ''}
+            value={formData?.username || ''}
             className='border-gray-300 focus:border-blue-500 focus:ring-blue-500'
           />
         </div>
@@ -357,10 +357,10 @@ export default function RegistrationPage() {
             {t('registration.telegram')}
           </label>
           <Input
-            name='telegramNumber'
+            name='username'
             placeholder={t('registration.telegram')}
             onChange={handleInputChange}
-            value={formData?.telegramNumber || ''}
+            value={formData?.username || ''}
             className='border-gray-300 focus:border-blue-500 focus:ring-blue-500'
           />
         </div>
@@ -400,7 +400,7 @@ export default function RegistrationPage() {
         <Select
           name='role'
           value={formData?.position || ''}
-          onValueChange={(value) => handleSelectChange('role', value)}
+          onValueChange={(value) => handleSelectChange('position', value)}
         >
           <SelectTrigger className='border-gray-300 focus:border-blue-500 focus:ring-blue-500'>
             <SelectValue placeholder={t('registration.position')} />
@@ -480,10 +480,10 @@ export default function RegistrationPage() {
             {t('registration.telegram')}
           </label>
           <Input
-            name='telegramNumber'
+            name='username'
             placeholder={t('registration.telegram')}
             onChange={handleInputChange}
-            value={formData?.telegramNumber || ''}
+            value={formData?.username || ''}
             className='border-gray-300 focus:border-blue-500 focus:ring-blue-500'
           />
         </div>

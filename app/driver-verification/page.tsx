@@ -9,9 +9,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/i18n';
+import { api } from '@/lib/api'; // Добавлен импорт API
 import {
   Loader2,
   ShieldCheck,
@@ -37,11 +37,16 @@ interface Document {
   url: string;
 }
 
+interface DocumentFormData {
+  file: File;
+  type: 'driver_license' | 'passport' | 'company_certificate' | 'other';
+  title: string;
+}
+
 const DriverVerificationPage: React.FC = () => {
   const router = useRouter();
   const [stage, setStage] = useState<VerificationStage>('initial');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [verificationResult, setVerificationResult] =
     useState<VerificationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,23 +60,18 @@ const DriverVerificationPage: React.FC = () => {
       toast.error(t('verification.licenseRequired'));
       return;
     }
-
     setStage('verifying');
     setIsModalOpen(false);
     setIsLoading(true);
 
     try {
-      // Имитация процесса проверки
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Небольшая задержка для индикации обработки
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // For demo, we'll approve most of the time
-      const isApproved = Math.random() > 0.1;
-
+      // Всегда успешно - без проверки, как требуется
       setVerificationResult({
-        isApproved,
-        message: isApproved
-          ? t('verification.success')
-          : t('verification.failure'),
+        isApproved: true,
+        message: t('verification.documentsUploaded'),
       });
 
       setStage('result');
@@ -84,21 +84,59 @@ const DriverVerificationPage: React.FC = () => {
     }
   };
 
-  // Simulate document upload
-  const handleDocumentUpload = (side: 'front' | 'back') => {
-    setIsLoading(true);
+  // Загрузка документа через API, как в меню
+  const handleDocumentUpload = async (side: 'front' | 'back') => {
+    // Используем скрытый input для выбора файла
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*,application/pdf';
 
-    // Simulate API call
-    setTimeout(() => {
-      if (side === 'front') {
-        setFrontUploaded(true);
-        toast.success('Передняя сторона лицензии загружена');
-      } else {
-        setBackUploaded(true);
-        toast.success('Задняя сторона лицензии загружена');
+    fileInput.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      // Проверка размера файла
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t('fileUpload.fileTooBig', { size: '5MB' }));
+        return;
       }
-      setIsLoading(false);
-    }, 1500);
+
+      setIsLoading(true);
+
+      try {
+        // Создаем объект документа для отправки на сервер, как в меню
+        const documentData: DocumentFormData = {
+          file,
+          type: 'driver_license', // Тип "водительские права"
+          title:
+            side === 'front'
+              ? t('verification.frontSide') +
+                ' ' +
+                t('verification.driverLicense')
+              : t('verification.backSide') +
+                ' ' +
+                t('verification.driverLicense'),
+        };
+
+        // Используем такой же API метод, как в меню
+        await api.addUserDocument(documentData);
+
+        if (side === 'front') {
+          setFrontUploaded(true);
+          toast.success(t('verification.frontSideUploaded'));
+        } else {
+          setBackUploaded(true);
+          toast.success(t('verification.backSideUploaded'));
+        }
+      } catch (error) {
+        toast.error(t('fileUpload.uploadError'));
+        console.error('Upload error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fileInput.click();
   };
 
   const stageVariants = {
@@ -117,11 +155,7 @@ const DriverVerificationPage: React.FC = () => {
             animate='animate'
             exit='exit'
             variants={stageVariants}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 30,
-            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className='w-full max-w-md'
           >
             <div className='bg-white rounded-2xl shadow-xl overflow-hidden'>
@@ -130,17 +164,14 @@ const DriverVerificationPage: React.FC = () => {
                   <IdCard className='h-10 w-10 text-white' />
                 </div>
               </div>
-
               <div className='p-6'>
                 <h1 className='text-2xl font-bold mb-6 text-blue-900'>
                   {t('verification.title')}
                 </h1>
-
                 <div className='space-y-4'>
                   <p className='text-gray-600'>
                     {t('verification.verificationRequest')}
                   </p>
-
                   <div className='bg-blue-50 rounded-lg p-4 border border-blue-100'>
                     <div className='flex items-start'>
                       <ShieldCheck className='h-5 w-5 text-blue-600 mt-1 mr-3 flex-shrink-0' />
@@ -175,7 +206,6 @@ const DriverVerificationPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-
                     <div className='flex-1'>
                       <div
                         className={`bg-gray-100 rounded-lg p-3 flex flex-col items-center ${
@@ -237,11 +267,7 @@ const DriverVerificationPage: React.FC = () => {
             animate='animate'
             exit='exit'
             variants={stageVariants}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 30,
-            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className='w-full max-w-md'
           >
             <div className='bg-white rounded-2xl shadow-xl p-8 text-center'>
@@ -250,21 +276,18 @@ const DriverVerificationPage: React.FC = () => {
                   <div className='w-24 h-24 border-t-4 border-blue-600 border-solid rounded-full animate-spin'></div>
                   <div className='w-24 h-24 border-4 border-blue-100 border-solid rounded-full absolute top-0'></div>
                 </div>
-
                 <h2 className='text-xl font-semibold text-blue-900 mb-3'>
-                  {t('verification.verifying')}
+                  {t('verification.processing')}
                 </h2>
-
                 <p className='text-gray-600 max-w-xs mx-auto'>
                   {t('verification.pleaseWait')}
                 </p>
-
                 <div className='w-full max-w-xs mt-6 bg-gray-200 rounded-full h-1.5'>
                   <motion.div
                     className='bg-blue-600 h-1.5 rounded-full'
                     initial={{ width: '0%' }}
                     animate={{ width: '100%' }}
-                    transition={{ duration: 2 }}
+                    transition={{ duration: 1 }}
                   ></motion.div>
                 </div>
               </div>
@@ -279,69 +302,34 @@ const DriverVerificationPage: React.FC = () => {
             animate='animate'
             exit='exit'
             variants={stageVariants}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 30,
-            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className='w-full max-w-md'
           >
             <div className='bg-white rounded-2xl shadow-xl overflow-hidden'>
-              <div
-                className={`${
-                  verificationResult.isApproved ? 'bg-green-600' : 'bg-red-600'
-                } p-6 flex justify-center`}
-              >
+              <div className='bg-green-600 p-6 flex justify-center'>
                 <div className='w-20 h-20 bg-white/20 rounded-full flex items-center justify-center'>
-                  {verificationResult.isApproved ? (
-                    <CheckCircle2 className='h-10 w-10 text-white' />
-                  ) : (
-                    <AlertCircle className='h-10 w-10 text-white' />
-                  )}
+                  <CheckCircle2 className='h-10 w-10 text-white' />
                 </div>
               </div>
-
               <div className='p-6'>
                 <h1 className='text-2xl font-bold mb-2 text-center text-blue-900'>
-                  {t('verification.verificationResult')}
+                  {t('verification.documentsUploaded')}
                 </h1>
-
-                <div
-                  className={`mt-4 p-4 rounded-lg ${
-                    verificationResult.isApproved
-                      ? 'bg-green-50 border border-green-100'
-                      : 'bg-red-50 border border-red-100'
-                  }`}
-                >
-                  <p
-                    className={`whitespace-pre-line ${
-                      verificationResult.isApproved
-                        ? 'text-green-800'
-                        : 'text-red-800'
-                    }`}
-                  >
-                    {verificationResult.message}
+                <div className='mt-4 p-4 rounded-lg bg-green-50 border border-green-100'>
+                  <p className='whitespace-pre-line text-green-800'>
+                    Спасибо! Ваши документы успешно загружены и будут проверены
+                    в ближайшее время. После проверки вы получите уведомление о
+                    результате.
                   </p>
                 </div>
-
                 <div className='mt-8'>
-                  {verificationResult.isApproved ? (
-                    <Button
-                      className='w-full bg-green-600 hover:bg-green-700 text-white'
-                      onClick={() => router.push('/registration-confirm')}
-                    >
-                      <ChevronRight className='h-4 w-4 mr-2' />
-                      {t('verification.proceedToMyID')}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant='outline'
-                      className='w-full border-red-200 text-red-600 hover:bg-red-50'
-                      onClick={() => setStage('initial')}
-                    >
-                      Попробовать снова
-                    </Button>
-                  )}
+                  <Button
+                    className='w-full bg-green-600 hover:bg-green-700 text-white'
+                    onClick={() => router.push('/menu')}
+                  >
+                    <ChevronRight className='h-4 w-4 mr-2' />
+                    {t('registrationConfirm.goToProfile')}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -356,7 +344,6 @@ const DriverVerificationPage: React.FC = () => {
               {t('verification.uploadLicense')}
             </DialogTitle>
           </DialogHeader>
-
           <div className='mt-4'>
             <div className='flex border-b border-gray-200'>
               <button
@@ -380,26 +367,24 @@ const DriverVerificationPage: React.FC = () => {
                 {t('verification.backSide')}
               </button>
             </div>
-
             <div className='mt-5'>
-              <div className='bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer'>
-                <input type='file' id='document-upload' className='hidden' />
-                <label htmlFor='document-upload' className='cursor-pointer'>
-                  <div className='mx-auto bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mb-4'>
-                    <Upload className='h-8 w-8 text-blue-600' />
-                  </div>
-                  <p className='font-medium text-gray-700'>
-                    {selectedTab === 'front'
-                      ? 'Загрузить переднюю сторону'
-                      : 'Загрузить заднюю сторону'}
-                  </p>
-                  <p className='text-sm text-gray-500 mt-1'>
-                    Drag and drop или нажмите для загрузки
-                  </p>
-                </label>
+              <div
+                onClick={() => handleDocumentUpload(selectedTab)}
+                className='bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer'
+              >
+                <div className='mx-auto bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mb-4'>
+                  <Upload className='h-8 w-8 text-blue-600' />
+                </div>
+                <p className='font-medium text-gray-700'>
+                  {selectedTab === 'front'
+                    ? 'Загрузить переднюю сторону'
+                    : 'Загрузить заднюю сторону'}
+                </p>
+                <p className='text-sm text-gray-500 mt-1'>
+                  Drag and drop или нажмите для загрузки
+                </p>
               </div>
             </div>
-
             <div className='flex justify-end mt-6 space-x-3'>
               <Button variant='outline' onClick={() => setIsModalOpen(false)}>
                 {t('common.cancel')}

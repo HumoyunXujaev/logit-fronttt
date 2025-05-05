@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ExternalLink } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useTranslation } from '@/contexts/i18n';
+import Link from 'next/link';
 
 interface Location {
   id: string;
@@ -90,6 +92,8 @@ interface Cargo {
   description: string;
   owner: {
     id: string;
+    username: any;
+    telegram_id: any;
     role: string;
     company_name?: string;
     full_name: string;
@@ -108,6 +112,7 @@ interface Cargo {
   price?: number;
   status: string;
   created_at: string;
+  source_id?: string;
 }
 
 const vehicleTypes = [
@@ -723,16 +728,20 @@ export default function HomePage() {
     fetchCargos();
   }, [searchTerm, filterParams]);
 
-  // Function to fetch cargos from API
   const fetchCargos = async (resetResults = true) => {
     try {
       setIsLoading(resetResults);
 
-      // Prepare query params
+      // Prepare query params - remove any empty values to reduce request size
       const params = {
-        search: searchTerm,
+        ...(searchTerm ? { search: searchTerm } : {}),
         ...filterParams,
       };
+
+      // Start timing
+      const timerLabel = `API_CALL_${Date.now()}`;
+      console.time(timerLabel);
+      console.log('Sending request with params:', params);
 
       // Use search endpoint if we have active filters
       let response;
@@ -741,6 +750,12 @@ export default function HomePage() {
       } else {
         response = await api.getCargos(params);
       }
+
+      // End timing and log results
+      console.log(response, 'res');
+      console.timeEnd(timerLabel);
+      console.log('Backend response time (ms):', performance.now());
+      console.log('Response data size:', JSON.stringify(response).length);
 
       // Update state with results
       if (resetResults) {
@@ -764,17 +779,49 @@ export default function HomePage() {
   };
 
   // Load more results when user scrolls to bottom
+  // const loadMoreResults = async () => {
+  //   if (!nextPage || isMoreLoading) return;
+  //   setIsMoreLoading(true);
+  //   try {
+  //     const response = await fetch(nextPage);
+  //     const data = await response.json();
+  //     setCargos((prev) => ({
+  //       ...data,
+  //       results: [...prev?.results, ...data?.results],
+  //     }));
+  //     setNextPage(data?.next);
+  //   } catch (error) {
+  //     toast.error(
+  //       t('cargo.errorLoadingMore') || 'Error loading additional results'
+  //     );
+  //     console.error('Load more error:', error);
+  //   } finally {
+  //     setIsMoreLoading(false);
+  //   }
+  // };
+
   const loadMoreResults = async () => {
     if (!nextPage || isMoreLoading) return;
     setIsMoreLoading(true);
     try {
-      const response = await fetch(nextPage);
-      const data = await response.json();
+      // Extract query params from the nextPage URL
+      const url = new URL(nextPage);
+      const limit = url.searchParams.get('limit');
+      const offset = url.searchParams.get('offset');
+
+      // Use your API utility with the extracted params instead of raw fetch
+      const response = await api.getCargos({
+        limit,
+        offset,
+        ...filterParams, // Include any current filters
+        search: searchTerm,
+      });
+
       setCargos((prev) => ({
-        ...data,
-        results: [...prev.results, ...data.results],
+        ...response,
+        results: [...prev.results, ...response.results],
       }));
-      setNextPage(data.next);
+      setNextPage(response.next);
     } catch (error) {
       toast.error(
         t('cargo.errorLoadingMore') || 'Error loading additional results'
@@ -807,6 +854,11 @@ export default function HomePage() {
     console.log('Applied filters:', filters);
     setIsLoading(true);
 
+    // Remove any undefined or empty string values to reduce payload size
+    const cleanedFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v !== undefined && v !== '')
+    );
+
     // Update active filters list for UI
     const newActiveFilters = [];
     if (filters.loading_location_id)
@@ -820,7 +872,7 @@ export default function HomePage() {
       newActiveFilters.push(t('cargo.weight'));
 
     setActiveFilters(newActiveFilters);
-    setFilterParams(filters);
+    setFilterParams(cleanedFilters);
   };
 
   // Reset all filters
@@ -922,6 +974,44 @@ export default function HomePage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const openTelegramProfile = (username: any) => {
+    if (!username) {
+      console.error('Invalid Telegram username');
+      return;
+    }
+
+    // Create proper telegram URL
+    const telegramUrl = `https://t.me/${username}`;
+
+    // Use Telegram's WebApp API to open Telegram links
+    if (window.Telegram && window.Telegram.WebApp) {
+      // This is the correct method for Telegram Mini Apps
+      window.Telegram.WebApp.openTelegramLink(telegramUrl);
+    } else {
+      // Fallback for when WebApp API isn't available
+      console.error('Telegram WebApp API not available');
+      window.open(telegramUrl, '_blank');
+    }
+  };
+
+  // Replace your existing openTelegramMessage function with this:
+  const openTelegramMessage = (messageUrl: any) => {
+    if (!messageUrl || !messageUrl.includes('t.me/')) {
+      console.error('Invalid Telegram message URL:', messageUrl);
+      return;
+    }
+
+    // Use Telegram's WebApp API to open Telegram links
+    if (window.Telegram && window.Telegram.WebApp) {
+      // This is the correct method for Telegram Mini Apps
+      window.Telegram.WebApp.openTelegramLink(messageUrl);
+    } else {
+      // Fallback for when WebApp API isn't available
+      console.error('Telegram WebApp API not available');
+      window.open(messageUrl, '_blank');
+    }
   };
 
   return (
@@ -1212,6 +1302,99 @@ export default function HomePage() {
                                     cargo.owner?.full_name}
                                 </span>
                               </p>
+                              {cargo.owner && cargo.owner.username && (
+                                <div className='flex justify-end mt-2'>
+                                  <a
+                                    href='#'
+                                    onClick={(e) => {
+                                      e.preventDefault(); // This is crucial
+                                      openTelegramProfile(cargo.owner.username);
+                                      return false; // Extra security to prevent default
+                                    }}
+                                    className='inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors'
+                                  >
+                                    <svg
+                                      className='h-4 w-4 mr-1.5'
+                                      viewBox='0 0 24 24'
+                                      fill='currentColor'
+                                      xmlns='http://www.w3.org/2000/svg'
+                                    >
+                                      <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.36 15.33c-.31 0-.3-.13-.62-.42l-1.8-1.73 4.14-2.57-4.89-2.96 1.52-1.55c.17-.18.38-.29.91-.12l6.89 2.96c.43.23.45.3.46.48.01.18-.02.25-.44.49l-5.46 4.6c-.21.18-.35.31-.71.31z' />
+                                    </svg>
+                                    {t('cargo.contactViatelegram')}
+                                  </a>
+                                </div>
+                              )}
+                              {/* Telegram Source Message */}
+                              {cargo?.source_id && (
+                                <div className='mt-4'>
+                                  <h3 className='font-semibold text-blue-800 mb-3 flex items-center'>
+                                    <svg
+                                      className='h-4 w-4 mr-2'
+                                      viewBox='0 0 24 24'
+                                      fill='none'
+                                      xmlns='http://www.w3.org/2000/svg'
+                                    >
+                                      <path
+                                        d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.36 15.33c-.31 0-.3-.13-.62-.42l-1.8-1.73 4.14-2.57-4.89-2.96 1.52-1.55c.17-.18.38-.29.91-.12l6.89 2.96c.43.23.45.3.46.48.01.18-.02.25-.44.49l-5.46 4.6c-.21.18-.35.31-.71.31z'
+                                        fill='#2AABEE'
+                                      />
+                                    </svg>
+                                    {t('cargo.originalMessage')}
+                                  </h3>
+                                  <div className='bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden'>
+                                    {/* Telegram message header */}
+                                    <div className='bg-[#f5f5f5] p-3 flex items-center border-b border-gray-200'>
+                                      <div className='w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3'>
+                                        {cargo?.owner?.full_name?.charAt(0) ||
+                                          'U'}
+                                      </div>
+                                      <div>
+                                        <div className='font-medium text-[#212121]'>
+                                          {cargo?.owner?.full_name || 'User'}
+                                        </div>
+                                        <div className='text-xs text-gray-500'>
+                                          {new Date(
+                                            cargo?.created_at
+                                          ).toLocaleString()}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {/* Telegram message content */}
+                                    <div className='p-4'>
+                                      <div className='whitespace-pre-line text-[#212121] mb-2'>
+                                        {/* Format the cargo details as a Telegram message */}
+                                        {`🚛 Груз: ${cargo?.title}
+📦 ${cargo?.description ? `Описание: ${cargo?.description}` : ''}
+📍 Откуда: ${cargo?.loading_point}
+📍 Куда: ${cargo?.unloading_point}
+📅 Дата погрузки: ${new Date(cargo?.loading_date).toLocaleDateString()}
+🚚 Тип ТС: ${t(`cargo.${cargo?.vehicle_type}`)}
+⚖️ Вес: ${cargo?.weight} ${t('common.ton')}${
+                                          cargo?.volume
+                                            ? `, Объём: ${cargo?.volume} м³`
+                                            : ''
+                                        }
+💰 Цена: ${cargo?.price ? `${cargo?.price} ₽` : t('cargo.negotiablePrice')}
+💳 Оплата: ${cargo?.payment_method}`}
+                                      </div>
+                                      {/* Forward link to original message */}
+                                      <a
+                                        href='#'
+                                        onClick={(e) => {
+                                          e.preventDefault(); // This is crucial
+                                          openTelegramMessage(cargo?.source_id);
+                                          return false; // Extra security to prevent default
+                                        }}
+                                        className='flex items-center justify-center mt-3 text-[#2AABEE] text-sm font-medium hover:underline'
+                                      >
+                                        <ExternalLink className='h-4 w-4 mr-1.5' />
+                                        {t('cargo.viewOriginalMessage')}
+                                      </a>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -1259,14 +1442,80 @@ export default function HomePage() {
                               }`}
                             />
                           </Button>
+                          {cargo.owner && cargo.owner.username && (
+                            <a
+                              href='#'
+                              onClick={(e) => {
+                                e.preventDefault();
+                                openTelegramProfile(cargo.owner.username);
+                                return false;
+                              }}
+                              className='flex-1 ml-1 mr-1'
+                            >
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                className='flex-1 ml-1 mr-1 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 hover:bg-blue-50'
+                              >
+                                <svg
+                                  className='h-4 w-4 mr-1'
+                                  viewBox='0 0 24 24'
+                                  fill='currentColor'
+                                  xmlns='http://www.w3.org/2000/svg'
+                                >
+                                  <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.36 15.33c-.31 0-.3-.13-.62-.42l-1.8-1.73 4.14-2.57-4.89-2.96 1.52-1.55c.17-.18.38-.29.91-.12l6.89 2.96c.43.23.45.3.46.48.01.18-.02.25-.44.49l-5.46 4.6c-.21.18-.35.31-.71.31z' />
+                                </svg>
+                              </Button>
+                            </a>
+                          )}
                           <Button
                             variant='outline'
                             size='sm'
                             className='ml-1 flex-none'
                             onClick={() => {
-                              navigator.clipboard.writeText(
-                                `${cargo.loading_point} - ${cargo.unloading_point}, ${cargo.weight}т`
-                              );
+                              const fullText = `
+🚛 Груз: ${cargo.title}
+📦 Описание: ${cargo.description}
+
+📍 Откуда: ${cargo.loading_point}${
+                                cargo.loading_location
+                                  ? ' (' + cargo.loading_location + ')'
+                                  : ''
+                              }
+📍 Куда: ${cargo.unloading_point}${
+                                cargo.unloading_location
+                                  ? ' (' + cargo.unloading_location + ')'
+                                  : ''
+                              }
+📅 Дата погрузки: ${cargo.loading_date}
+🚚 Тип ТС: ${cargo.vehicle_type}
+
+⚖️ Вес: ${cargo.weight} т${
+                                cargo.volume
+                                  ? ', Объём: ' + cargo.volume + ' м³'
+                                  : ''
+                              }
+💰 Цена: ${cargo.price ? cargo.price + ' сум' : 'Не указана'}
+💳 Оплата: ${cargo.payment_method}
+
+👤 Владелец: ${
+                                cargo.owner.company_name
+                                  ? cargo.owner.company_name + ' / '
+                                  : ''
+                              }${cargo.owner.full_name}
+${cargo.owner.is_verified ? '✅ Верифицирован' : ''}
+${cargo.owner.rating !== undefined ? '⭐️ Рейтинг: ' + cargo.owner.rating : ''}
+${
+  cargo.owner.telegram_id
+    ? '📱 Telegram: tg://user?id=' + cargo.owner.telegram_id
+    : ''
+}
+
+📅 Создано: ${new Date(cargo.created_at).toLocaleDateString()}
+🔖 Статус: ${cargo.status}
+    `.trim();
+
+                              navigator.clipboard.writeText(fullText);
                               toast.success(t('home.copiedToClipboard'));
                             }}
                           >

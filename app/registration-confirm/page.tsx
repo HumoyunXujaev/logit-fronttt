@@ -60,8 +60,10 @@ const RegistrationCompletionPage: React.FC = () => {
             type: userState.type,
             role: userState.role,
             preferred_language: userState.language,
-            phone_number: phone,
-            whatsapp_number: whatsapp,
+            phoneNumber: phone,
+            whatsappNumber: whatsapp,
+            // phone_number: phone,
+            // whatsapp_number: whatsapp,
             username: telegram,
           },
         });
@@ -244,10 +246,10 @@ const RegistrationCompletionPage: React.FC = () => {
 
               <CardFooter className='p-6 pt-0'>
                 <Button
-                  onClick={() => router.push('/menu')}
+                  onClick={() => router.push('/driver-verification')}
                   className='w-full bg-blue-600 hover:bg-blue-700 text-white'
                 >
-                  {t('registrationConfirm.goToProfile')}
+                  {t('auth.verification')}
                   <ArrowRight className='ml-2 h-4 w-4' />
                 </Button>
               </CardFooter>

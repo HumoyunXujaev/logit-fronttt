@@ -17,6 +17,7 @@ export interface UserState {
     photo?: string;
     companyName?: string;
     fullName?: string;
+    username?: any;
     telegramNumber?: string;
     whatsappNumber?: string;
     phoneNumber?: string;
