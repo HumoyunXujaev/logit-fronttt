@@ -59,28 +59,68 @@ export class AuthService {
     return response.data;
   }
 
+  static async checkSmartbotUser(telegramId: number | string): Promise<any> {
+    try {
+      // Update baseURL before each request
+      api.defaults.baseURL = getApiUrl();
+
+      const response = await api.post('/users/check-smartbot-user/', {
+        telegram_id: telegramId,
+      });
+
+      // If user was found in smartbot and imported, handle auth data
+      if (response.data.imported) {
+        await this.handleAuthResponse(response);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Smartbot user check error:', error);
+      return null;
+    }
+  }
+
   static async checkTelegramAuth(telegramData: any): Promise<boolean> {
     try {
       const authPayload = await this.prepareAuthPayload(telegramData);
       console.log('Checking auth payload:', authPayload);
+
       // Update baseURL before each request to ensure we're using the latest env var
       api.defaults.baseURL = getApiUrl();
-      const response = await api.post('/users/telegram_auth/', authPayload);
-      // If user is found, save tokens and return true
-      await this.handleAuthResponse(response);
-      return true;
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        if (error.response?.status === 404) {
-          // User not found - this is an expected result
+
+      try {
+        const response = await api.post('/users/telegram_auth/', authPayload);
+        // If user is found, save tokens and return true
+        await this.handleAuthResponse(response);
+        return true;
+      } catch (error: any) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          // User not found - check if they exist in smartbot
+          const telegramId = telegramData.initDataUnsafe.user.id;
+
+          // Try to check and import from smartbot
+          const smartbotResponse = await this.checkSmartbotUser(telegramId);
+
+          // If user was imported from smartbot, return true
+          if (
+            smartbotResponse &&
+            (smartbotResponse.imported || smartbotResponse.in_local_db)
+          ) {
+            return true;
+          }
+
+          // User doesn't exist in either database
           return false;
         }
+
         // Other errors
         const message =
           error.response?.data?.detail || 'Authentication check failed';
         toast.error(message);
         console.error('Auth check error:', error.response?.data);
+        throw error;
       }
+    } catch (error) {
       throw error;
     }
   }

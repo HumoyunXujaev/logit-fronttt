@@ -5,6 +5,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
+import AuthService from '@/lib/auth';
 
 interface User {
   id: string;
@@ -92,10 +94,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Update in contexts/AuthContext.tsx - modify the login method
   const login = async (telegramData: any) => {
     try {
       setIsLoading(true);
-      const userData = await api.telegramAuth(telegramData);
+
+      // First try regular authentication
+      let userData;
+      try {
+        userData = await api.telegramAuth(telegramData);
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          // User not found - check if they exist in smartbot
+          const telegramId = telegramData.user.id;
+
+          // Check and potentially import from smartbot
+          const smartbotResponse = await AuthService.checkSmartbotUser(
+            telegramId
+          );
+
+          // If user was imported or found in smartbot
+          if (
+            smartbotResponse &&
+            (smartbotResponse.imported || smartbotResponse.in_local_db)
+          ) {
+            userData = smartbotResponse.user;
+
+            // If tokens were provided (user was imported)
+            if (smartbotResponse.access && smartbotResponse.refresh) {
+              localStorage.setItem('access_token', smartbotResponse.access);
+              localStorage.setItem('refresh_token', smartbotResponse.refresh);
+            }
+          } else {
+            // User doesn't exist in either database
+            throw error;
+          }
+        } else {
+          // Other errors - rethrow
+          throw error;
+        }
+      }
+
       setUser(userData);
 
       // Redirect based on user type and verification status

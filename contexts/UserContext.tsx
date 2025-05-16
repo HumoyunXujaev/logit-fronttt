@@ -25,6 +25,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize user state
   useEffect(() => {
+    // Update in contexts/UserContext.tsx - modify the initUser function
     const initUser = async () => {
       try {
         // Check if we have a stored user state
@@ -36,20 +37,53 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         // Check if we're in Telegram WebApp
         if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
           const webApp = window.Telegram.WebApp;
-
           if (webApp.initData && webApp.initDataUnsafe) {
             // Check if we have a selected test user
             const hasSelectedTestUser = localStorage.getItem(
               SELECTED_TEST_USER_KEY
             );
 
-            // Proceed with auth check
-            const userExists = await AuthService.checkTelegramAuth(
-              webApp
-            ).catch((err) => {
-              console.error('Auth check error:', err);
-              return false;
-            });
+            // Get the telegram user ID
+            const telegramId = webApp.initDataUnsafe.user.id;
+
+            // Try regular auth check first
+            let userExists = false;
+            try {
+              userExists = await AuthService.checkTelegramAuth(webApp);
+            } catch (error) {
+              console.error('Auth check error:', error);
+            }
+
+            // If user doesn't exist in our database, check smartbot
+            if (!userExists) {
+              try {
+                const smartbotResponse = await AuthService.checkSmartbotUser(
+                  telegramId
+                );
+
+                // If user was found or imported from smartbot
+                if (
+                  smartbotResponse &&
+                  (smartbotResponse.imported || smartbotResponse.in_local_db)
+                ) {
+                  userExists = true;
+
+                  // If tokens were provided (user was imported)
+                  if (smartbotResponse.access && smartbotResponse.refresh) {
+                    localStorage.setItem(
+                      'access_token',
+                      smartbotResponse.access
+                    );
+                    localStorage.setItem(
+                      'refresh_token',
+                      smartbotResponse.refresh
+                    );
+                  }
+                }
+              } catch (smartbotError) {
+                console.error('Smartbot check error:', smartbotError);
+              }
+            }
 
             if (userExists) {
               // If user exists, try to retrieve their profile

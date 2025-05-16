@@ -664,6 +664,19 @@ export class ApiClient {
       throw error;
     }
   }
+
+  // Add to lib/api.ts - inside the ApiClient class
+  public async checkSmartbotUser(telegramId: string | number) {
+    try {
+      const response = await this.api.post('/users/check-smartbot-user/', {
+        telegram_id: telegramId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Check smartbot user error:', error);
+      throw error;
+    }
+  }
 }
 
 // Function to initialize the API client
