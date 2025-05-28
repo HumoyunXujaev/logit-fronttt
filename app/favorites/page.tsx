@@ -178,7 +178,7 @@ export default function FavoritesPage() {
             [t('cargo.vehicleType')]: t(`cargo.${response.vehicle_type}`),
             [t('cargo.payment')]: response.payment_method,
             [t('cargo.price')]: response.price
-              ? `${response.price} ₽`
+              ? `${response.price} $`
               : t('cargo.negotiablePrice'),
             [t('cargo.loadingDate')]: new Date(
               response.loading_date

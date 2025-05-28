@@ -1404,7 +1404,7 @@ const MyVehiclesPage = () => {
                       strokeLinejoin='round'
                     />
                   </svg>
-                  {t('vehicle.expectedPrice')}: {request.price_expectation} ₽
+                  {t('vehicle.expectedPrice')}: {request.price_expectation} $
                 </p>
               )}
 

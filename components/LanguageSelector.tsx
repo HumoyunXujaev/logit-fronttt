@@ -6,7 +6,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/contexts/i18n';
 
@@ -33,18 +32,28 @@ export default function LanguageSelector({
     { code: 'uz', name: t('selectLang.uz'), flag: '🇺🇿' },
   ];
 
+  // Находим текущий выбранный язык
+  const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
+
   return (
     <div className={className}>
       <Select value={currentLanguage} onValueChange={handleLanguageChange}>
-        <SelectTrigger>
-          <SelectValue />
+        <SelectTrigger className="w-full">
+          <div className='flex items-center justify-start w-full'>
+            <span className='mr-2 text-base'>
+              {selectedLanguage?.flag || '🌐'}
+            </span>
+            <span className='text-sm font-medium'>
+              {selectedLanguage?.name || t('selectLang.select') || 'Выберите язык'}
+            </span>
+          </div>
         </SelectTrigger>
         <SelectContent>
           {languages.map((lang) => (
             <SelectItem key={lang.code} value={lang.code}>
-              <div className='flex items-center'>
-                <span className='mr-2'>{lang.flag}</span>
-                <span>{lang.name}</span>
+              <div className='flex items-center w-full'>
+                <span className='mr-2 text-base'>{lang.flag}</span>
+                <span className='text-sm font-medium'>{lang.name}</span>
               </div>
             </SelectItem>
           ))}

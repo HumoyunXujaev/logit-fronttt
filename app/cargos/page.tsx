@@ -1123,7 +1123,7 @@ export default function CargoPage() {
       case 'payment':
         return formData.payment_method
           ? `${t(`cargo.${formData.payment_method}`)}${
-              formData.price ? `, ${formData.price} ₽` : ''
+              formData.price ? `, ${formData.price} $` : ''
             }`
           : '';
       default:

@@ -346,6 +346,7 @@ export const uz: Translations = {
     notificationsOnNewCargos:
       "Siz ushbu yo'nalish bo'yicha yangi yuklar haqida Telegram orqali bildirishnomalar olasiz:",
     hideDetails: 'Yashirish',
+    telegramChannel: 'Telegram gruppa',
     showDetails: 'Batafsil',
     loadMore: "Ko'proq yuklash",
     addPoint: "Yo'nalish nuqtasini qo'shish",

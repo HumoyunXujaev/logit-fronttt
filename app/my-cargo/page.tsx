@@ -221,7 +221,7 @@ export default function MyCargoPage() {
             <div className='flex items-center text-gray-600'>
               <CreditCard className='h-4 w-4 mr-1.5 text-blue-600' />
               <span>
-                {cargo.price ? `${cargo.price} ₽` : t('cargo.negotiablePrice')}
+                {cargo.price ? `${cargo.price} $` : t('cargo.negotiablePrice')}
               </span>
             </div>
           </div>

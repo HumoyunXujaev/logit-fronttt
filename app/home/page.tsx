@@ -454,6 +454,8 @@ const FilterModal: React.FC<{
     const filterData = {
       loading_location_id: filters.loading_location.id || undefined,
       unloading_location_id: filters.unloading_location.id || undefined,
+      from_location: filters.loading_location.name || undefined,
+      to_location: filters.unloading_location.name || undefined,
       vehicle_type: filters.vehicle_type || undefined,
       date_from: filters.dateRange.startDate
         ? new Date(filters.dateRange.startDate).toISOString().split('T')[0]
@@ -489,6 +491,21 @@ const FilterModal: React.FC<{
     });
     onClose();
   };
+
+  <style jsx global>{`
+    .rdrCalendarWrapper {
+      font-size: 14px !important;
+    }
+    .rdrMonth {
+      width: 100% !important;
+    }
+    .rdrDayNumber span {
+      font-size: 13px !important;
+    }
+    .rdrMonthName {
+      font-size: 14px !important;
+    }
+  `}</style>;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -612,7 +629,7 @@ const FilterModal: React.FC<{
               </p>
             </div>
 
-            <div className='border border-blue-500 rounded-md p-4 mt-2'>
+            {/* <div className='border border-blue-500 rounded-md p-4 mt-2'>
               <h3 className='text-sm font-medium text-blue-100 mb-2'>
                 {t('cargo.loadingDate')}
               </h3>
@@ -624,6 +641,27 @@ const FilterModal: React.FC<{
                   direction='vertical'
                   className='w-full'
                 />
+              </div>
+            </div> */}
+            <div className='border border-blue-500 rounded-md p-4 mt-2'>
+              <h3 className='text-sm font-medium text-blue-100 mb-3'>
+                {t('cargo.loadingDate')}
+              </h3>
+              <div className='bg-white rounded-md p-2 overflow-hidden'>
+                <div className='calendar-container'>
+                  <DateRange
+                    ranges={[filters.dateRange]}
+                    onChange={handleDateRangeChange}
+                    months={1}
+                    direction='horizontal'
+                    showMonthAndYearPickers={true}
+                    showDateDisplay={false}
+                    rangeColors={['#3b82f6']}
+                    weekStartsOn={1}
+                    // staticRanges={[]}
+                    // inputRanges={[]}
+                  />
+                </div>
               </div>
             </div>
 
@@ -1019,6 +1057,120 @@ export default function HomePage() {
       className='min-h-screen bg-gradient-to-b from-blue-700 to-blue-600 p-4 pb-20'
       ref={pageRef}
     >
+      {/* Добавьте сразу после открывающего div */}
+      <style jsx global>{`
+        .calendar-container {
+          display: flex;
+          justify-content: center;
+          width: 100%;
+          overflow-x: auto;
+          overflow-y: hidden;
+        }
+
+        .calendar-container .rdrCalendarWrapper {
+          font-size: 12px !important;
+          width: 100% !important;
+          max-width: 320px !important;
+          margin: 0 auto !important;
+        }
+
+        .calendar-container .rdrMonth {
+          width: 100% !important;
+          padding: 0 !important;
+        }
+
+        .calendar-container .rdrMonthAndYearWrapper {
+          height: 40px !important;
+          padding: 0 8px !important;
+        }
+
+        .calendar-container .rdrMonthName {
+          font-size: 14px !important;
+        }
+
+        .calendar-container .rdrWeekDays {
+          display: grid !important;
+          grid-template-columns: repeat(7, 1fr) !important;
+          gap: 0 !important;
+        }
+
+        .calendar-container .rdrWeekDay {
+          font-size: 11px !important;
+          padding: 4px 0 !important;
+          text-align: center !important;
+        }
+
+        .calendar-container .rdrDays {
+          display: grid !important;
+          grid-template-columns: repeat(7, 1fr) !important;
+          gap: 2px !important;
+        }
+
+        .calendar-container .rdrDay {
+          height: 36px !important;
+          width: 100% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        .calendar-container .rdrDayNumber {
+          top: 0 !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        .calendar-container .rdrDayNumber span {
+          font-size: 13px !important;
+          line-height: 1 !important;
+        }
+
+        .calendar-container .rdrMonthPicker,
+        .calendar-container .rdrYearPicker {
+          width: 60px !important;
+          font-size: 12px !important;
+        }
+
+        .calendar-container .rdrNextPrevButton {
+          width: 24px !important;
+          height: 24px !important;
+          margin: 0 4px !important;
+        }
+
+        .calendar-container .rdrNextPrevButton i {
+          margin: 0 !important;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 380px) {
+          .calendar-container .rdrCalendarWrapper {
+            max-width: 280px !important;
+          }
+
+          .calendar-container .rdrDay {
+            height: 32px !important;
+          }
+
+          .calendar-container .rdrDayNumber span {
+            font-size: 12px !important;
+          }
+        }
+
+        /* Планшеты и больше */
+        @media (min-width: 768px) {
+          .calendar-container .rdrCalendarWrapper {
+            max-width: 350px !important;
+          }
+
+          .calendar-container .rdrDay {
+            height: 40px !important;
+          }
+        }
+      `}</style>
       {/* Search and Filter section */}
       <div className='relative max-w-4xl mx-auto mb-6'>
         <div className='absolute inset-0 bg-white/5 backdrop-blur-sm rounded-xl'></div>
@@ -1241,7 +1393,7 @@ export default function HomePage() {
                             <CreditCardIcon className='h-4 w-4 mr-1 text-blue-600' />
                             <span className='font-semibold text-gray-900'>
                               {cargo.price
-                                ? `${cargo.price} ₽`
+                                ? `${cargo.price} $`
                                 : t('cargo.negotiablePrice')}
                             </span>
                             <Badge
@@ -1326,6 +1478,7 @@ export default function HomePage() {
                                 </div>
                               )}
                               {/* Telegram Source Message */}
+                              {/* Telegram Source Message */}
                               {cargo?.source_id && (
                                 <div className='mt-4'>
                                   <h3 className='font-semibold text-blue-800 mb-3 flex items-center'>
@@ -1345,13 +1498,18 @@ export default function HomePage() {
                                   <div className='bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden'>
                                     {/* Telegram message header */}
                                     <div className='bg-[#f5f5f5] p-3 flex items-center border-b border-gray-200'>
-                                      <div className='w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3'>
-                                        {cargo?.owner?.full_name?.charAt(0) ||
-                                          'U'}
+                                      <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#2AABEE] to-[#1e88e5] flex items-center justify-center text-white mr-3'>
+                                        <svg
+                                          className='h-6 w-6'
+                                          viewBox='0 0 24 24'
+                                          fill='currentColor'
+                                        >
+                                          <path d='M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z' />
+                                        </svg>
                                       </div>
-                                      <div>
+                                      <div className='flex-1'>
                                         <div className='font-medium text-[#212121]'>
-                                          {cargo?.owner?.full_name || 'User'}
+                                          {t('cargo.telegramChannel')}
                                         </div>
                                         <div className='text-xs text-gray-500'>
                                           {new Date(
@@ -1359,6 +1517,12 @@ export default function HomePage() {
                                           ).toLocaleString()}
                                         </div>
                                       </div>
+                                      <Badge
+                                        variant='secondary'
+                                        className='bg-[#2AABEE]/10 text-[#2AABEE] border-0'
+                                      >
+                                        Telegram
+                                      </Badge>
                                     </div>
                                     {/* Telegram message content */}
                                     <div className='p-4'>
@@ -1375,16 +1539,16 @@ export default function HomePage() {
                                             ? `, Объём: ${cargo?.volume} м³`
                                             : ''
                                         }
-💰 Цена: ${cargo?.price ? `${cargo?.price} ₽` : t('cargo.negotiablePrice')}
-💳 Оплата: ${cargo?.payment_method}`}
+💰 Цена: ${cargo?.price ? `${cargo?.price} $` : t('cargo.negotiablePrice')}
+💳 Оплата: ${t(`cargo.${cargo?.payment_method}`)}`}
                                       </div>
                                       {/* Forward link to original message */}
                                       <a
                                         href='#'
                                         onClick={(e) => {
-                                          e.preventDefault(); // This is crucial
+                                          e.preventDefault();
                                           openTelegramMessage(cargo?.source_id);
-                                          return false; // Extra security to prevent default
+                                          return false;
                                         }}
                                         className='flex items-center justify-center mt-3 text-[#2AABEE] text-sm font-medium hover:underline'
                                       >

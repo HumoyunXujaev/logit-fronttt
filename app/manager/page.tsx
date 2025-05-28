@@ -177,7 +177,7 @@ export default function ManagerPage() {
           <div>
             <span className='font-medium'>{t('cargo.payment')}:</span>
             <p>
-              {cargo?.payment_method} {cargo?.price && ` (${cargo?.price} ₽)`}
+              {cargo?.payment_method} {cargo?.price && ` (${cargo?.price} $)`}
             </p>
           </div>
         </div>

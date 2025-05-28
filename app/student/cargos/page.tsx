@@ -285,7 +285,7 @@ export default function StudentCargosPage() {
             <div className='flex justify-between items-center pt-3 border-t border-gray-200'>
               <div className='font-medium text-blue-700'>
                 <CreditCard className='h-4 w-4 inline mr-1.5' />
-                {cargo.price ? `${cargo.price} ₽` : t('cargo.negotiablePrice')}
+                {cargo.price ? `${cargo.price} $` : t('cargo.negotiablePrice')}
               </div>
               <span className='text-sm text-gray-500'>
                 {new Date(cargo.created_at).toLocaleDateString()}
@@ -443,7 +443,7 @@ export default function StudentCargosPage() {
                             {t('cargo.price')}:
                           </span>
                           <span className='font-medium text-blue-700'>
-                            {selectedCargo.price} ₽
+                            {selectedCargo.price} $
                           </span>
                         </p>
                       )}

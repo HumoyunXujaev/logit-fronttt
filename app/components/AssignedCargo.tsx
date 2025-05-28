@@ -187,7 +187,7 @@ export default function AssignedCargosSection() {
                       </span>
                       <p>
                         {cargo?.payment_method}{' '}
-                        {cargo?.price && ` (${cargo?.price} ₽)`}
+                        {cargo?.price && ` (${cargo?.price} $)`}
                       </p>
                     </div>
                   </div>

@@ -277,6 +277,7 @@ export const ru: Translations = {
     side: 'Боковая',
     top: 'Верхняя',
     hydro_board: 'Гидроборт',
+    telegramChannel: 'Telegram канал',
     cash: 'Наличные',
     card: 'Карта',
     transfer: 'Банковский перевод',
