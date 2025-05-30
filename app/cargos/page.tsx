@@ -71,6 +71,8 @@ import { useTranslation } from '@/contexts/i18n';
 interface Location {
   id: number;
   name: string;
+  name_ru?: string;
+  display_name?: string;
   level: number; // 1 = Country, 2 = Region/State, 3 = City
   parent_name?: string;
   country_name?: string;
@@ -624,8 +626,13 @@ export default function CargoPage() {
     const handleSelect = (location: any) => {
       onChange({
         id: location.id,
-        name: location.full_name || location.name,
+        name:
+          location.display_name ||
+          location.name_ru ||
+          location.full_name ||
+          location.name,
       });
+
       setSearchQuery('');
       setOpen(false);
     };
@@ -724,7 +731,12 @@ export default function CargoPage() {
                       >
                         <div className='flex-1'>
                           <p className='text-sm font-medium text-foreground'>
-                            {location.name}
+                            {location.display_name || location.name}
+                            {location.name_ru && (
+                              <span className='text-blue-200 text-xs ml-2'>
+                                ({location.name})
+                              </span>
+                            )}
                             {location.level === 3 && location.parent_name && (
                               <span className='text-muted-foreground font-normal'>
                                 {' '}

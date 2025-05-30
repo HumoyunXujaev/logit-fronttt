@@ -60,6 +60,8 @@ import Link from 'next/link';
 interface Location {
   id: string;
   name: string;
+  name_ru?: string;
+  display_name?: string;
   full_name?: string;
   level?: number;
   parent_name?: string;
@@ -197,7 +199,11 @@ const LocationSelector = ({
   const handleSelect = (location: any) => {
     onChange({
       id: location.id,
-      name: location.full_name || location.name,
+      name:
+        location.display_name ||
+        location.name_ru ||
+        location.full_name ||
+        location.name,
     });
     setSearchQuery('');
     setOpen(false);
@@ -293,7 +299,12 @@ const LocationSelector = ({
                     >
                       <div className='flex-1'>
                         <p className='text-sm font-medium text-white'>
-                          {location.name}
+                          {location.display_name || location.name}
+                          {location.name_ru && (
+                            <span className='text-blue-200 text-xs ml-2'>
+                              ({location.name})
+                            </span>
+                          )}
                           {location.level === 3 && location.parent_name && (
                             <span className='text-blue-200 font-normal'>
                               {' '}
